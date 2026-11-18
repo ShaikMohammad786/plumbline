@@ -1,0 +1,28 @@
+name: 'Plumbline Repository Truth Scanner'
+description: 'Architecture-agnostic repository scanner for security, AI slop, coding gaps, and claim verification.'
+author: 'Shaik Mohammad'
+inputs:
+  path:
+    description: 'Path to repository root or directory to scan'
+    required: false
+    default: '.'
+  fail-on:
+    description: 'Failure exit threshold (critical, high, medium, low, none)'
+    required: false
+    default: 'high'
+  out:
+    description: 'Output directory for reports'
+    required: false
+    default: '.plumbline/out'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Plumbline Scan
+      shell: bash
+      run: |
+        python -m plumbline.cli scan "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}" --format terminal --format sarif --format md --format html --out "${{ inputs.out }}"
+
+branding:
+  icon: 'shield'
+  color: 'blue'

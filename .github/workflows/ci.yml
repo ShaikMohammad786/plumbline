@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -40,9 +40,15 @@ jobs:
 
       - name: Run pytest with coverage
         run: |
-          pytest --cov=plumbline/ingest --cov=plumbline/ucm --cov-report=term-missing tests/
+          pytest -q --cov=src/plumbline --cov-fail-under=80 tests/
 
-      - name: Plumbline smoke test (self-scan)
+      - name: Plumbline self-scan and SARIF export
         run: |
           plumb version
-          plumb scan .
+          plumb scan . --format terminal --format sarif --out .plumbline/out --fail-on high
+
+      - name: Upload SARIF report
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .plumbline/out/report.sarif

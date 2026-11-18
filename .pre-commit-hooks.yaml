@@ -1,0 +1,7 @@
+- id: plumbline-gate
+  name: Plumbline Gate
+  description: Fast repository truth check for security, AI slop, and coding gaps
+  entry: plumb gate
+  language: python
+  stages: [pre-commit]
+  pass_filenames: false

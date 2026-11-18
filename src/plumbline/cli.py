@@ -80,6 +80,10 @@ def scan(
     no_claims: bool = typer.Option(
         False, "--no-claims", help="Skip claim ledger extraction and verification"
     ),
+    diff: Optional[str] = typer.Option(
+        None, "--diff", help="Only scan files changed relative to git ref"
+    ),
+    staged: bool = typer.Option(False, "--staged", help="Only scan staged files in git"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimal output"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose debug output"),
 ) -> None:
@@ -102,6 +106,26 @@ def scan(
     walk_result = walk_repository(target_root, cfg)
     files = walk_result.files
     notes = walk_result.notes
+
+    if staged or diff:
+        import subprocess
+
+        changed: set[str] = set()
+        cmd = (
+            ["git", "diff", "--cached", "--name-only"]
+            if staged
+            else ["git", "diff", "--name-only", diff or "HEAD"]
+        )
+        try:
+            res = subprocess.run(cmd, cwd=target_root, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    if line.strip():
+                        changed.add(line.strip().replace("\\", "/"))
+        except Exception:
+            pass
+        if changed:
+            files = [f for f in files if f.path in changed]
 
     manifest_deps: list[Dependency] = []
     manifest_names = {
@@ -349,6 +373,290 @@ def baseline_update(
 ) -> None:
     """Update baseline JSON file with current scan findings."""
     baseline_create(path, out)
+
+
+hook_app = typer.Typer(help="Manage repository git hooks.")
+app.add_typer(hook_app, name="hook")
+
+
+@hook_app.command("install")
+def hook_install(
+    path: Path = typer.Option(Path("."), "--path", help="Repository root path"),
+) -> None:
+    """Install git pre-commit hook that runs plumb gate."""
+    from plumbline.hooks import install_git_hook
+
+    try:
+        hook_file = install_git_hook(path)
+        console.print(
+            f"[bold green]✔ Git pre-commit hook installed successfully:[/bold green] {hook_file}"
+        )
+    except Exception as exc:
+        err_console.print(f"[bold red]Failed to install git hook:[/bold red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+@app.command()
+def gate(
+    path: Path = typer.Argument(Path("."), help="Repository path"),
+    fail_on: str = typer.Option("high", "--fail-on", help="Fail exit code threshold"),
+    diff: Optional[str] = typer.Option(None, "--diff", help="Git ref to diff against"),
+    staged: bool = typer.Option(
+        True, "--staged/--all", help="Scan staged changes (default: staged)"
+    ),
+) -> None:
+    """Compact gate scan for agents, subagents, and git pre-commit hooks."""
+    target_root = path.resolve()
+    try:
+        cfg = load_config(fail_on=fail_on)
+    except Exception as e:
+        err_console.print(f"[bold red]Configuration error:[/bold red] {e}")
+        raise typer.Exit(code=2) from e
+
+    walk_res = walk_repository(target_root, cfg)
+    files = walk_res.files
+
+    if staged or diff:
+        import subprocess
+
+        changed: set[str] = set()
+        cmd = (
+            ["git", "diff", "--cached", "--name-only"]
+            if staged
+            else ["git", "diff", "--name-only", diff or "HEAD"]
+        )
+        try:
+            res = subprocess.run(cmd, cwd=target_root, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    if line.strip():
+                        changed.add(line.strip().replace("\\", "/"))
+        except Exception:
+            pass
+
+    manifest_deps: list[Dependency] = []
+    manifest_names = {
+        "package.json",
+        "requirements.txt",
+        "pyproject.toml",
+        "pipfile",
+        "go.mod",
+        "cargo.toml",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+        "gemfile",
+        "composer.json",
+    }
+    for fe in walk_res.files:
+        if fe.path.lower().split("/")[-1] in manifest_names:
+            manifest_deps.extend(parse_manifest(target_root / fe.path, fe.path))
+
+    context = ScanContext(target_root, walk_res.files, manifest_deps, cfg)
+    raw_findings = registry.run_all(context)
+    deduped = deduplicate_findings(raw_findings)
+    suppressed = apply_suppressions(deduped, context)
+    baselined = apply_baseline(suppressed, None)
+
+    active_findings = [
+        f for f in baselined if not f.suppressed and not f.baselined and not f.llm_dismissed
+    ]
+    if (staged or diff) and changed:
+        active_findings = [f for f in active_findings if f.location.path in changed]
+    threshold_sevs = SEVERITY_THRESHOLDS.get(fail_on.lower(), SEVERITY_THRESHOLDS["high"])
+    failing = [f for f in active_findings if f.severity in threshold_sevs]
+
+    if failing:
+        console.print(
+            f"[bold red]✖ Plumbline gate failed:[/bold red] {len(failing)} blocking finding(s) at or above '{fail_on}' threshold:"
+        )
+        for fnd in failing[:10]:
+            console.print(
+                f"  - [{fnd.severity.value.upper()}] [bold cyan]{fnd.rule_id}[/bold cyan] in {fnd.location.path}:{fnd.location.start_line} — {fnd.message}"
+            )
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"[bold green]✔ Plumbline gate passed:[/bold green] 0 blocking findings (scanned {len(files)} files)."
+    )
+    raise typer.Exit(code=0)
+
+
+@app.command()
+def fix(
+    path: Path = typer.Argument(Path("."), help="Repository path"),
+    apply: bool = typer.Option(False, "--apply", help="Apply fixes directly to source files"),
+    only: Optional[str] = typer.Option(None, "--only", help="Filter by rule ID, e.g. SEC005"),
+) -> None:
+    """Generate or apply safe auto-fix patches for SEC005, SLP007, DEP005."""
+    from plumbline.report.patches import (
+        SAFE_AUTOFIX_RULES,
+        apply_patch_to_disk,
+        generate_and_save_patches,
+    )
+
+    target_root = path.resolve()
+    cfg = load_config()
+
+    walk_res = walk_repository(target_root, cfg)
+    manifest_deps: list[Dependency] = []
+    manifest_names = {
+        "package.json",
+        "requirements.txt",
+        "pyproject.toml",
+        "pipfile",
+        "go.mod",
+        "cargo.toml",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+        "gemfile",
+        "composer.json",
+    }
+    for fe in walk_res.files:
+        if fe.path.lower().split("/")[-1] in manifest_names:
+            manifest_deps.extend(parse_manifest(target_root / fe.path, fe.path))
+
+    context = ScanContext(target_root, walk_res.files, manifest_deps, cfg)
+    raw_findings = registry.run_all(context)
+    deduped = deduplicate_findings(raw_findings)
+    suppressed = apply_suppressions(deduped, context)
+
+    eligible = [
+        f
+        for f in suppressed
+        if not f.suppressed
+        and f.rule_id in SAFE_AUTOFIX_RULES
+        and (not only or f.rule_id.upper() == only.upper())
+    ]
+
+    if not eligible:
+        console.print(
+            "[green]No safe autofixable findings detected (SEC005, SLP007, DEP005).[/green]"
+        )
+        return
+
+    patches = generate_and_save_patches(eligible, target_root)
+    if not patches:
+        console.print(
+            "[yellow]No applicable patches could be generated for eligible findings.[/yellow]"
+        )
+        return
+
+    if apply:
+        applied_count = 0
+        for f_item, _diff, _ in patches:
+            if apply_patch_to_disk(f_item, target_root):
+                applied_count += 1
+                console.print(
+                    f"[bold green]✔ Applied autofix:[/bold green] {f_item.rule_id} in {f_item.location.path}:{f_item.location.start_line}"
+                )
+        console.print(f"[bold green]Successfully applied {applied_count} patch(es).[/bold green]")
+    else:
+        console.print(
+            f"[bold cyan]Generated {len(patches)} patch(es) in .plumbline/fixes/ (dry-run):[/bold cyan]"
+        )
+        for f_item, diff_str, p_path in patches:
+            console.print(
+                f"\n[bold]{f_item.rule_id} in {f_item.location.path}:{f_item.location.start_line}[/bold] ({p_path})"
+            )
+            console.print(diff_str)
+        console.print(
+            "\n[dim]Run 'plumb fix --apply' to apply these patches directly to your files.[/dim]"
+        )
+
+
+@app.command()
+def init(
+    path: Path = typer.Argument(Path("."), help="Repository path"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing configuration"),
+) -> None:
+    """Initialize .plumbline.yml configuration, git pre-commit hook, and CI workflow."""
+    target_root = path.resolve()
+    config_file = target_root / ".plumbline.yml"
+    ci_file = target_root / ".github" / "workflows" / "plumbline.yml"
+
+    if config_file.exists() and not force:
+        console.print("[yellow].plumbline.yml already exists. Use --force to overwrite.[/yellow]")
+    else:
+        sample_config = (
+            "version: 1\n\n"
+            "scan:\n"
+            "  include: []\n"
+            "  exclude:\n"
+            "    - '**/node_modules/**'\n"
+            "    - '**/vendor/**'\n"
+            "    - '**/.venv/**'\n"
+            "  max_file_kb: 1024\n\n"
+            "fail_on: high\n"
+            "online: false\n\n"
+            "llm:\n"
+            "  provider: compat\n"
+            "  model: gpt-4o\n"
+            "  api_key_env: OPENAI_API_KEY\n"
+            "  max_total_tokens: 100000\n"
+            "  redact: true\n\n"
+            "claims:\n"
+            "  enabled: true\n"
+            "  extra_sources: []\n\n"
+            "report:\n"
+            "  formats:\n"
+            "    - terminal\n"
+            "    - sarif\n"
+            "    - html\n"
+            "  out_dir: .plumbline/out\n"
+        )
+        config_file.write_text(sample_config, encoding="utf-8")
+        console.print(f"[bold green]✔ Created configuration:[/bold green] {config_file}")
+
+    # Write CI workflow
+    ci_file.parent.mkdir(parents=True, exist_ok=True)
+    if not ci_file.exists() or force:
+        ci_content = (
+            "name: Plumbline Scan\n\n"
+            "on:\n"
+            "  push:\n"
+            "    branches: [main]\n"
+            "  pull_request:\n"
+            "    branches: [main]\n\n"
+            "jobs:\n"
+            "  plumbline:\n"
+            "    runs-on: ubuntu-latest\n"
+            "    steps:\n"
+            "      - uses: actions/checkout@v4\n"
+            "      - uses: actions/setup-python@v5\n"
+            "        with:\n"
+            "          python-version: '3.12'\n"
+            "      - name: Install Plumbline\n"
+            "        run: pip install .\n"
+            "      - name: Run Plumbline Scan\n"
+            "        run: plumb scan . --format terminal --format sarif --out .plumbline/out --fail-on high\n"
+            "      - name: Upload SARIF report\n"
+            "        if: always()\n"
+            "        uses: github/codeql-action/upload-sarif@v3\n"
+            "        with:\n"
+            "          sarif_file: .plumbline/out/report.sarif\n"
+        )
+        ci_file.write_text(ci_content, encoding="utf-8")
+        console.print(f"[bold green]✔ Created CI workflow:[/bold green] {ci_file}")
+
+    # Try install git hook
+    if (target_root / ".git").is_dir():
+        from plumbline.hooks import install_git_hook
+
+        try:
+            h_path = install_git_hook(target_root)
+            console.print(f"[bold green]✔ Installed git pre-commit hook:[/bold green] {h_path}")
+        except Exception:
+            pass
+
+
+@app.command()
+def mcp() -> None:
+    """Start Plumbline stdio MCP server for AI coding agents."""
+    from plumbline.mcp_server import run_mcp_server
+
+    run_mcp_server()
 
 
 @app.command()

@@ -123,11 +123,14 @@ caching:
   triggers:
     - '\b(cach(ing|ed|e)|redis cache|memcached|in-memory cache|ttl cache)\b'
   positive:
+    files:
+      - 'cache'
     imports:
       - 'redis'
       - 'memcache'
       - 'cachetools'
       - 'lru_cache'
+      - 'cache'
     calls:
       - 'cache'
       - 'setex'
