@@ -2,27 +2,52 @@
 
 from __future__ import annotations
 
+import datetime
 import time
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from plumbline.config import load_config
+from plumbline.detectors import registry
+from plumbline.detectors.context import ScanContext
+from plumbline.fusion.baseline import apply_baseline, save_baseline
+from plumbline.fusion.dedupe import deduplicate_findings
+from plumbline.fusion.score import compute_repo_truth_score
+from plumbline.fusion.suppress import apply_suppressions
 from plumbline.ingest.manifests import Dependency, parse_manifest
 from plumbline.ingest.walker import walk_repository
-from plumbline.models import ScanStats
-from plumbline.ucm.builder import extract_file_facts
+from plumbline.models import FindingSeverity, Report, ScanStats
+from plumbline.report.json_out import render_json_report
+from plumbline.report.terminal import render_terminal_report
 
 app = typer.Typer(
     name="plumb",
     help="Plumbline: Repository truth scanner for security, slop, gaps, and claim verification.",
     add_completion=False,
 )
+baseline_app = typer.Typer(help="Manage repository finding baselines.")
+app.add_typer(baseline_app, name="baseline")
+
 console = Console()
 err_console = Console(stderr=True)
+
+SEVERITY_THRESHOLDS = {
+    "critical": {FindingSeverity.CRITICAL},
+    "high": {FindingSeverity.CRITICAL, FindingSeverity.HIGH},
+    "medium": {FindingSeverity.CRITICAL, FindingSeverity.HIGH, FindingSeverity.MEDIUM},
+    "low": {
+        FindingSeverity.CRITICAL,
+        FindingSeverity.HIGH,
+        FindingSeverity.MEDIUM,
+        FindingSeverity.LOW,
+    },
+    "none": set(),
+}
 
 
 @app.command()
@@ -37,11 +62,13 @@ def scan(
     ),
     online: bool = typer.Option(False, "--online", help="Enable online registry lookups"),
     llm: bool = typer.Option(False, "--llm", help="Enable LLM triage and explanation"),
+    baseline: Optional[Path] = typer.Option(None, "--baseline", help="Custom baseline JSON file"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimal output"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose debug output"),
 ) -> None:
     """Scan repository for security vulnerabilities, AI slop, gaps, and claim verification."""
     start_time = time.perf_counter()
+    started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     try:
         cfg = load_config(fail_on=fail_on, online=online)
@@ -54,15 +81,11 @@ def scan(
         err_console.print(f"[bold red]Path not found:[/bold red] {path}")
         raise typer.Exit(code=2)
 
-    if not quiet:
-        console.print(f"[bold blue]Scanning repository:[/bold blue] {target_root}")
-
-    # 1. Ingest: Walk files
+    # 1. Ingest
     walk_result = walk_repository(target_root, cfg)
     files = walk_result.files
     notes = walk_result.notes
 
-    # 2. Ingest: Parse manifests
     manifest_deps: list[Dependency] = []
     manifest_names = {
         "package.json",
@@ -83,7 +106,14 @@ def scan(
             deps = parse_manifest(f.full_path, f.path)
             manifest_deps.extend(deps)
 
-    # 3. UCM: Extract facts & record engines used
+    # 2. Context & Facts
+    context = ScanContext(
+        root=target_root,
+        files=files,
+        dependencies=manifest_deps,
+        config=cfg,
+    )
+
     languages: dict[str, int] = {}
     file_classes: dict[str, int] = {}
     ecosystems: dict[str, int] = {}
@@ -93,24 +123,28 @@ def scan(
     for f in files:
         lang = f.language or "unknown"
         languages[lang] = languages.get(lang, 0) + 1
-
         cls_name = f.file_class.value
         file_classes[cls_name] = file_classes.get(cls_name, 0) + 1
 
         if f.text:
-            lines = len(f.text.splitlines())
-            total_lines += lines
-
-            # Extract UCM facts
-            facts = extract_file_facts(f.path, f.language, f.text)
-            if lang != "unknown" and lang not in ucm_engines:
+            total_lines += len(f.text.splitlines())
+            facts = context.get_facts(f.path)
+            if facts and lang != "unknown" and lang not in ucm_engines:
                 ucm_engines[lang] = facts.engine_used
 
     for dep in manifest_deps:
         ecosystems[dep.ecosystem] = ecosystems.get(dep.ecosystem, 0) + 1
 
-    duration = time.perf_counter() - start_time
+    # 3. Detectors Execution
+    raw_findings = registry.run_all(context)
 
+    # 4. Fusion Layer
+    deduped = deduplicate_findings(raw_findings)
+    suppressed = apply_suppressions(deduped, context)
+    baselined = apply_baseline(suppressed, baseline)
+    score, grade, breakdown = compute_repo_truth_score(baselined)
+
+    duration = time.perf_counter() - start_time
     stats = ScanStats(
         files=len(files),
         lines=total_lines,
@@ -121,45 +155,133 @@ def scan(
         duration_s=round(duration, 3),
     )
 
-    if not quiet:
-        # Display Stats Table
-        table = Table(title="[bold cyan]Plumbline Repository Ingest & UCM Summary[/bold cyan]")
-        table.add_column("Metric", style="bold white")
-        table.add_column("Value", style="green")
+    report = Report(
+        started_at=started_at,
+        root=str(target_root),
+        stats=stats,
+        findings=baselined,
+        claims=[],
+        score=score,
+        grade=grade,
+        score_breakdown=breakdown,
+        notes=notes,
+    )
 
-        table.add_row("Total Files Ingested", str(stats.files))
-        table.add_row("Total Lines of Code", str(stats.lines))
-        table.add_row(
-            "Languages Detected", ", ".join(f"{k} ({v})" for k, v in sorted(languages.items()))
-        )
-        table.add_row(
-            "File Classes", ", ".join(f"{k}: {v}" for k, v in sorted(file_classes.items()))
-        )
-        table.add_row(
-            "Dependencies Found", f"{len(manifest_deps)} across {len(ecosystems)} ecosystems"
-        )
-        if ecosystems:
-            table.add_row(
-                "Ecosystems", ", ".join(f"{k} ({v})" for k, v in sorted(ecosystems.items()))
-            )
-        table.add_row(
-            "UCM Parsing Engines", ", ".join(f"{k} -> {v}" for k, v in sorted(ucm_engines.items()))
-        )
-        table.add_row("Scan Duration", f"{stats.duration_s:.3f} seconds")
+    # 5. Output formats
+    if "json" in format:
+        out_file = out / "report.json" if len(format) > 1 or out != Path(".plumbline/out") else None
+        json_output = render_json_report(report, out_file)
+        if not out_file and ("json" in format and len(format) == 1):
+            console.print(json_output)
 
-        console.print(table)
+    if "terminal" in format and not quiet:
+        render_terminal_report(report, console)
 
-        if notes and verbose:
-            console.print("\n[bold yellow]Scan Notes:[/bold yellow]")
-            for note in notes:
-                console.print(f"  • {note}")
+    # 6. Exit code logic
+    active_findings = [f for f in baselined if not f.suppressed and not f.baselined]
+    threshold_sevs = SEVERITY_THRESHOLDS.get(fail_on.lower(), SEVERITY_THRESHOLDS["high"])
+    failing_findings = [f for f in active_findings if f.severity in threshold_sevs]
 
-        console.print(
-            "\n[bold green]Scan completed clean: 0 findings (Phase 1 Foundation)[/bold green]"
-        )
+    if failing_findings:
+        raise typer.Exit(code=1)
 
-    # Exit code: 0 clean
     raise typer.Exit(code=0)
+
+
+@app.command()
+def explain(
+    rule_id: str = typer.Argument(..., help="Rule ID to inspect, e.g. GAP001 or SLP001"),
+) -> None:
+    """Explain a detection rule with why it matters, examples, and remediation."""
+    spec = registry.get(rule_id.upper())
+    if not spec:
+        err_console.print(f"[bold red]Unknown rule ID:[/bold red] {rule_id}")
+        raise typer.Exit(code=2)
+
+    console.print()
+    title_text = f"[bold cyan]{spec.id}[/bold cyan]: {spec.title}"
+    console.print(Panel(title_text, border_style="cyan"))
+
+    console.print(f"[bold]Family:[/bold] {spec.family}")
+    console.print(f"[bold]Default Severity:[/bold] {spec.severity.value}")
+    console.print(f"[bold]Default Confidence:[/bold] {spec.confidence.value}")
+    console.print(f"[bold]Heuristic:[/bold] {'Yes' if spec.heuristic else 'No'}")
+    if spec.tags:
+        console.print(f"[bold]Tags:[/bold] {', '.join(spec.tags)}")
+    console.print(f"[bold]Fix Hint:[/bold] {spec.fix_hint}")
+    console.print()
+
+    console.print("[bold red]Bad Example:[/bold red]")
+    console.print(Panel(spec.bad.strip(), border_style="red"))
+
+    console.print("[bold green]Good Example:[/bold green]")
+    console.print(Panel(spec.good.strip(), border_style="green"))
+
+    console.print("[bold blue]How to Suppress:[/bold blue]")
+    console.print(
+        f"Add inline comment: [dim]// plumbline:ignore[{spec.id}] <mandatory reason>[/dim]"
+    )
+    console.print()
+
+
+@app.command()
+def rules(
+    family: Optional[str] = typer.Option(
+        None, "--family", "-f", help="Filter by rule family (GAP|SLP|SEC|DEP|CLM)"
+    ),
+    format: str = typer.Option("table", "--format", help="Output format (table|md)"),
+) -> None:
+    """List registered detection rules."""
+    rule_list = registry.list_rules(family)
+
+    if format == "md":
+        for r in rule_list:
+            console.print(f"- **{r.id}** ({r.severity.value}): {r.title}")
+        return
+
+    table = Table(title="Plumbline Detection Rules")
+    table.add_column("ID", style="bold cyan")
+    table.add_column("Family", style="magenta")
+    table.add_column("Severity", style="red")
+    table.add_column("Confidence", style="white")
+    table.add_column("Heuristic", style="dim")
+    table.add_column("Title", style="white")
+
+    for r in rule_list:
+        h_str = "H" if r.heuristic else "-"
+        table.add_row(r.id, r.family, r.severity.value, r.confidence.value, h_str, r.title)
+
+    console.print(table)
+
+
+@baseline_app.command("create")
+def baseline_create(
+    path: Path = typer.Argument(Path("."), help="Path to repository root"),
+    out: Path = typer.Option(
+        Path(".plumbline/baseline.json"), "--out", help="Baseline output path"
+    ),
+) -> None:
+    """Create a new baseline JSON file from current scan findings."""
+    cfg = load_config()
+    walk_res = walk_repository(path.resolve(), cfg)
+    ctx = ScanContext(path.resolve(), walk_res.files, [], cfg)
+    raw = registry.run_all(ctx)
+    deduped = deduplicate_findings(raw)
+    suppressed = apply_suppressions(deduped, ctx)
+
+    count = save_baseline(suppressed, out)
+    console.print(f"[bold green]Baseline created:[/bold green] saved {count} findings to {out}")
+
+
+@baseline_app.command("update")
+def baseline_update(
+    path: Path = typer.Argument(Path("."), help="Path to repository root"),
+    out: Path = typer.Option(
+        Path(".plumbline/baseline.json"), "--out", help="Baseline path to update"
+    ),
+) -> None:
+    """Update baseline JSON file with current scan findings."""
+    baseline_create(path, out)
 
 
 @app.command()
@@ -167,25 +289,6 @@ def version() -> None:
     """Show Plumbline version information."""
     console.print("[bold]Plumbline[/bold] version 0.1.0")
     console.print("Python 3.11+ Universal Code Model & Repo Truth Scanner")
-
-
-@app.command()
-def rules(
-    family: Optional[str] = typer.Option(
-        None, "--family", "-f", help="Filter by rule family (SEC|DEP|SLP|GAP|CLM)"
-    ),
-    format: str = typer.Option("table", "--format", help="Output format (table|md)"),
-) -> None:
-    """List registered detection rules."""
-    table = Table(title="Plumbline Detection Rules")
-    table.add_column("ID", style="bold cyan")
-    table.add_column("Family", style="magenta")
-    table.add_column("Severity", style="red")
-    table.add_column("Title", style="white")
-
-    # In Phase 1, the rule registry is empty
-    console.print(table)
-    console.print("[dim]No rules loaded in Phase 1 (foundation). Rules activate in Phase 2.[/dim]")
 
 
 def main() -> None:

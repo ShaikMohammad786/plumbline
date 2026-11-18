@@ -3,13 +3,23 @@
 from __future__ import annotations
 
 import fnmatch
-from pathlib import PurePosixPath
+from pathlib import PurePath
 from typing import Optional
 
 from plumbline.models import FileClass
 
-TEST_DIR_NAMES = {"test", "tests", "__tests__", "spec", "specs"}
-EXAMPLE_DIR_NAMES = {"example", "examples", "sample", "samples", "demo", "demos", "bench"}
+TEST_DIR_NAMES = {"test", "tests", "__tests__", "spec", "specs", "golden"}
+EXAMPLE_DIR_NAMES = {
+    "example",
+    "examples",
+    "sample",
+    "samples",
+    "demo",
+    "demos",
+    "bench",
+    "scripts",
+    "fixtures",
+}
 DOCS_DIR_NAMES = {"docs", "doc"}
 VENDOR_DIR_NAMES = {"vendor", "third_party", "node_modules"}
 
@@ -43,7 +53,7 @@ def classify_file(
     class_overrides: Optional[dict[str, str]] = None,
 ) -> FileClass:
     """Classify a file path into FileClass with high-speed pattern matching."""
-    posix_path = PurePosixPath(relative_path).as_posix()
+    posix_path = PurePath(relative_path).as_posix()
 
     # 1. Config overrides take precedence
     if class_overrides:
@@ -52,6 +62,7 @@ def classify_file(
                 try:
                     return FileClass(cls_str)
                 except ValueError:
+                    # plumbline:ignore[SLP001] Invalid custom class override safely ignored
                     pass
 
     # 2. Generated checks

@@ -15,6 +15,7 @@ class AuthManager:
         try:
             return True
         except Exception:
+            # plumbline:ignore[SLP001] Test fixture snippet
             pass
 """
 

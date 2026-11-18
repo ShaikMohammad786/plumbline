@@ -80,20 +80,80 @@ def extract_file_facts(path: str, language: Optional[str], content: str) -> UCMF
 
         tree = parser.parse(content.encode("utf-8"))
         cursor = QueryCursor(query)
-        captures = cursor.captures(tree.root_node)
+        matches = cursor.matches(tree.root_node)
 
         facts = UCMFileFacts(path=path, language=language, engine_used="tree-sitter")
 
-        # captures is dict[str, list[Node]]
-        if isinstance(captures, dict):
-            for cap_name, nodes in captures.items():
+        for _, match_dict in matches:
+            # Check function definitions
+            if "symbol.function.name" in match_dict:
+                name_node = match_dict["symbol.function.name"][0]
+                name_text = content.encode("utf-8")[
+                    name_node.start_byte : name_node.end_byte
+                ].decode("utf-8", errors="replace")
+
+                def_node = match_dict.get("symbol.function.def", [name_node])[0]
+                start_l = def_node.start_point[0] + 1
+                end_l = def_node.end_point[0] + 1
+                body_bytes = content.encode("utf-8")[def_node.start_byte : def_node.end_byte]
+                body_hash = hashlib.sha256(body_bytes).hexdigest()[:16]
+
+                facts.symbols.append(
+                    Symbol(
+                        name=name_text,
+                        kind="function",
+                        start_line=start_l,
+                        end_line=end_l,
+                        body_hash=body_hash,
+                    )
+                )
+
+            elif "symbol.class.name" in match_dict:
+                name_node = match_dict["symbol.class.name"][0]
+                name_text = content.encode("utf-8")[
+                    name_node.start_byte : name_node.end_byte
+                ].decode("utf-8", errors="replace")
+
+                def_node = match_dict.get("symbol.class.def", [name_node])[0]
+                start_l = def_node.start_point[0] + 1
+                end_l = def_node.end_point[0] + 1
+
+                facts.symbols.append(
+                    Symbol(
+                        name=name_text,
+                        kind="class",
+                        start_line=start_l,
+                        end_line=end_l,
+                    )
+                )
+
+            for cap_name, nodes in match_dict.items():
+                if cap_name in (
+                    "symbol.function.name",
+                    "symbol.function.def",
+                    "symbol.class.name",
+                    "symbol.class.def",
+                ):
+                    continue
                 for node in nodes:
-                    _process_capture(cap_name, node, content, facts)
-        elif isinstance(captures, list):
-            for item in captures:
-                if isinstance(item, tuple) and len(item) == 2:
-                    node, cap_name = item
-                    _process_capture(cap_name, node, content, facts)
+                    start_line = node.start_point[0] + 1
+                    node_text = content.encode("utf-8")[node.start_byte : node.end_byte].decode(
+                        "utf-8", errors="replace"
+                    )
+
+                    if cap_name in ("import.module", "import.name", "import.from_module"):
+                        cleaned = node_text.strip("'\"")
+                        facts.imports.append(Import(module=cleaned, line=start_line))
+                    elif cap_name == "comment.text":
+                        facts.comments.append(
+                            Comment(text=node_text.lstrip("#/ *-").strip(), line=start_line)
+                        )
+                    elif cap_name == "string.lit":
+                        val = node_text.strip("'\"")
+                        if val and len(val) > 1:
+                            facts.strings.append(StringLit(value=val, line=start_line))
+                    elif cap_name == "call.callee":
+                        facts.call_sites.append(CallSite(callee=node_text, line=start_line))
 
         # Fast heuristic checks before running regex passes
         lines = content.splitlines()
@@ -116,42 +176,3 @@ def extract_file_facts(path: str, language: Optional[str], content: str) -> UCMF
     except Exception:
         # Seamlessly fallback to lexical engine
         return extract_lexical_facts(path, language, content)
-
-
-def _process_capture(cap_name: str, node: Any, content: str, facts: UCMFileFacts) -> None:
-    start_line = node.start_point[0] + 1
-    end_line = node.end_point[0] + 1
-    node_text = content.encode("utf-8")[node.start_byte : node.end_byte].decode(
-        "utf-8", errors="replace"
-    )
-
-    if cap_name == "symbol.function.name":
-        facts.symbols.append(
-            Symbol(
-                name=node_text,
-                kind="function",
-                start_line=start_line,
-                end_line=end_line,
-                body_hash=hashlib.sha256(node_text.encode("utf-8")).hexdigest()[:16],
-            )
-        )
-    elif cap_name == "symbol.class.name":
-        facts.symbols.append(
-            Symbol(
-                name=node_text,
-                kind="class",
-                start_line=start_line,
-                end_line=end_line,
-            )
-        )
-    elif cap_name in ("import.module", "import.name", "import.from_module"):
-        cleaned = node_text.strip("'\"")
-        facts.imports.append(Import(module=cleaned, line=start_line))
-    elif cap_name == "comment.text":
-        facts.comments.append(Comment(text=node_text.lstrip("#/ *-").strip(), line=start_line))
-    elif cap_name == "string.lit":
-        val = node_text.strip("'\"")
-        if val and len(val) > 1:
-            facts.strings.append(StringLit(value=val, line=start_line))
-    elif cap_name == "call.callee":
-        facts.call_sites.append(CallSite(callee=node_text, line=start_line))

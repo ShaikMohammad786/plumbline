@@ -230,7 +230,8 @@ def _extract_env_reads(lines: list[str], facts: UCMFileFacts) -> None:
 
 def _extract_handlers(lines: list[str], language: Optional[str], facts: UCMFileFacts) -> None:
     except_re = re.compile(r"^\s*except(?:\s+([a-zA-Z0-9_, ]+))?:")
-    catch_re = re.compile(r"^\s*catch\s*(?:\(([^)]+)\))?")
+    catch_inline_re = re.compile(r"\bcatch\s*(?:\([^)]+\))?\s*\{([^}]*)\}")
+    catch_re = re.compile(r"\bcatch\s*(?:\([^)]+\))?")
     go_err_re = re.compile(r"^\s*if\s+err\s*!=\s*nil\s*\{")
 
     for line_no, raw in enumerate(lines, start=1):
@@ -238,17 +239,26 @@ def _extract_handlers(lines: list[str], language: Optional[str], facts: UCMFileF
         if language == "python" and except_re.match(line):
             m = except_re.match(line)
             types = [t.strip() for t in m.group(1).split(",")] if m and m.group(1) else []
-            # Check next line for empty / pass
-            next_line = lines[line_no].strip() if line_no < len(lines) else ""
+            # Check next non-comment line for empty / pass
+            next_idx = line_no
+            while next_idx < len(lines) and lines[next_idx].strip().startswith(("#", "//")):
+                next_idx += 1
+            next_line = lines[next_idx].strip() if next_idx < len(lines) else ""
             is_empty = next_line in ("pass", "...", "return None", "return")
             facts.handlers.append(
                 Handler(kind="exception", caught_types=types, empty=is_empty, line=line_no)
             )
 
-        elif language in ("javascript", "typescript", "tsx", "java") and catch_re.match(line):
-            next_line = lines[line_no].strip() if line_no < len(lines) else ""
-            is_empty = next_line in ("}", ";")
-            facts.handlers.append(Handler(kind="exception", empty=is_empty, line=line_no))
+        elif language in ("javascript", "typescript", "tsx", "java"):
+            m_inline = catch_inline_re.search(line)
+            if m_inline:
+                body = m_inline.group(1).strip()
+                is_empty = body == "" or body == ";" or "console.log" in body
+                facts.handlers.append(Handler(kind="exception", empty=is_empty, line=line_no))
+            elif catch_re.search(line):
+                next_line = lines[line_no].strip() if line_no < len(lines) else ""
+                is_empty = next_line in ("}", ";") or "console.log" in next_line
+                facts.handlers.append(Handler(kind="exception", empty=is_empty, line=line_no))
 
         elif language == "go" and go_err_re.match(line):
             next_line = lines[line_no].strip() if line_no < len(lines) else ""

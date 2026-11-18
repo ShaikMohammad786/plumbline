@@ -45,3 +45,35 @@ This log provides a truthful, complete audit trail of all AI interactions, model
   - Synthetic directory benchmark of 5,000 files verified under 5 seconds.
 - **Open issues**:
   - None for Phase 1. Ready for Phase 2 (GAP and SLP detector rules, scoring, and reports).
+
+---
+
+## 2026-11-18 14:55 IST, Phase 2: Detectors (GAP & SLP), Fusion, Terminal & JSON Reports
+- **Tool and model**: Antigravity, Gemini 3.8 Flash (High)
+- **Prompt summary**: Implemented RuleSpec and centralized rule registry, ScanContext, 9 GAP detector rules, 10 SLP detector rules, fusion engine (SHA-256 stable fingerprinting, deduplication, inline suppressions with mandatory reasons, baseline create/update, logarithmic Repo Truth Scoring 0-100), Rich terminal and JSON reporting, and 19 golden test fixture sets.
+- **What the AI produced**:
+  - `src/plumbline/detectors/base.py`, `registry.py`, `context.py`.
+  - `src/plumbline/detectors/gaps/rules.py` (GAP001 to GAP009).
+  - `src/plumbline/detectors/slop/rules.py` (SLP001 to SLP010).
+  - `src/plumbline/fusion/` (`fingerprint.py`, `dedupe.py`, `suppress.py`, `baseline.py`, `score.py`).
+  - `src/plumbline/report/` (`terminal.py`, `json_out.py`).
+  - CLI commands: `scan`, `rules`, `explain`, `baseline create|update`.
+  - Generated documentation: `docs/RULES.md` and `docs/SCORING.md`.
+  - Golden test harness `tests/unit/test_golden.py` and 19 fixture directories under `tests/golden/`.
+  - Dogfooding configuration `.plumbline.yml`.
+- **What I changed or rejected, and why**:
+  - Fixed cross-platform Windows path handling: switched from `PurePosixPath` to `PurePath(path).as_posix()` in `walker.py`, `classify.py`, and `fingerprint.py` so Windows path separators `\` are correctly normalized to `/`.
+  - Excluded `tests/golden` fixtures from project-wide linting and from default self-scan via `.plumbline.yml` because they deliberately contain broken/unreferenced code fixtures for testing detectors.
+  - Refined `SLP002` placeholder detection to ignore detector rule definitions (e.g. `bad=`, `good=`, `RuleSpec(`) and keyword constants to prevent false positives during self-scanning.
+  - Refined `SLP007` debug detector regex to `(?<!\.)\bprint\(` to prevent false positives on Rich `Console.print` method calls in the terminal renderer.
+  - Refined `SLP010` identifier naming conflict detector to require `ident[0].islower()` for camelCase variables, preventing false positives on standard PascalCase class/type names (`FileClass`, `UserId`, `ScanContext`).
+  - Restricted `GAP001` and `GAP002` to ignore markdown documentation (`FileClass.DOCS`) and restricted `GAP003` to test files (`FileClass.TEST`).
+  - Improved `lexical.py` handler extraction to skip inline comments preceding `pass`/`return`.
+- **How it was verified**:
+  - Golden test suite passed across all 19 GAP and SLP rules with positive and negative fixtures.
+  - `pytest --cov=src/plumbline` achieved 90% core coverage across 27 tests.
+  - Strict typing (`mypy src tests`) and linting (`ruff check .`, `ruff format --check .`) passed with 0 errors.
+  - Self-scan dogfooding: `plumb scan .` completed in 0.18s with Repo Truth Score 91/100 (Grade A), 0 Critical, 0 High, 0 Medium findings, and exit code 0.
+  - Baseline lifecycle verified: `plumb baseline create` and baseline re-scan cleanly verified.
+- **Open issues**:
+  - Security (SEC001-SEC015) and Supply Chain (DEP001-DEP007) rules to be implemented in Phase 3.

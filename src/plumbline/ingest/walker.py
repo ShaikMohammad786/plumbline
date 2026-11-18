@@ -6,7 +6,7 @@ import hashlib
 import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePath
 from typing import Any, Optional
 
 import pathspec
@@ -125,6 +125,7 @@ def walk_repository(root_path: Path, config: PlumblineConfig) -> WalkResult:
             with open(gitignore_file, "r", encoding="utf-8", errors="replace") as f:
                 ignore_lines.extend(f.readlines())
         except Exception:
+            # plumbline:ignore[SLP001] Missing or unreadable gitignore safely ignored
             pass
 
     spec = pathspec.PathSpec.from_lines("gitignore", ignore_lines)
@@ -151,7 +152,7 @@ def walk_repository(root_path: Path, config: PlumblineConfig) -> WalkResult:
             continue
 
         rel_dir = os.path.relpath(root, resolved_root)
-        posix_rel_dir = "" if rel_dir == "." else PurePosixPath(rel_dir).as_posix()
+        posix_rel_dir = "" if rel_dir == "." else PurePath(rel_dir).as_posix()
 
         # Prune excluded directories
         pruned_dirs: list[str] = []
