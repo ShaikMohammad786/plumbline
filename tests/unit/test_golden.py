@@ -37,7 +37,7 @@ def test_golden_gap_and_slp_rules() -> None:
 
         rule_id = rule_dir.name
         # Skip rules that are repo-wide metadata checks in isolated file tests
-        if rule_id in ("GAP008", "GAP004", "SEC011"):
+        if rule_id in ("GAP008", "GAP004", "SEC011", "CLM001", "CLM002", "CLM003"):
             continue
 
         pos_files = list(rule_dir.glob("pos_*.*"))

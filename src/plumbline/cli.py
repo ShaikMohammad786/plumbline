@@ -12,6 +12,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from plumbline.claims.extract import extract_claims
+from plumbline.claims.verify import verify_all_claims
 from plumbline.config import load_config
 from plumbline.detectors import registry
 from plumbline.detectors.context import ScanContext
@@ -22,7 +24,9 @@ from plumbline.fusion.suppress import apply_suppressions
 from plumbline.ingest.manifests import Dependency, parse_manifest
 from plumbline.ingest.walker import walk_repository
 from plumbline.models import FindingSeverity, Report, ScanStats
+from plumbline.report.html import write_html_report
 from plumbline.report.json_out import render_json_report
+from plumbline.report.markdown import render_markdown_report, write_markdown_report
 from plumbline.report.sarif import render_sarif_report
 from plumbline.report.terminal import render_terminal_report
 
@@ -64,6 +68,9 @@ def scan(
     online: bool = typer.Option(False, "--online", help="Enable online registry lookups"),
     llm: bool = typer.Option(False, "--llm", help="Enable LLM triage and explanation"),
     baseline: Optional[Path] = typer.Option(None, "--baseline", help="Custom baseline JSON file"),
+    no_claims: bool = typer.Option(
+        False, "--no-claims", help="Skip claim ledger extraction and verification"
+    ),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimal output"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose debug output"),
 ) -> None:
@@ -136,14 +143,19 @@ def scan(
     for dep in manifest_deps:
         ecosystems[dep.ecosystem] = ecosystems.get(dep.ecosystem, 0) + 1
 
-    # 3. Detectors Execution
+    # 3. Detectors & Claims Execution
     raw_findings = registry.run_all(context)
+
+    verified_claims = []
+    if not no_claims:
+        raw_claims = extract_claims(context)
+        verified_claims = verify_all_claims(raw_claims, context, findings=raw_findings)
 
     # 4. Fusion Layer
     deduped = deduplicate_findings(raw_findings)
     suppressed = apply_suppressions(deduped, context)
     baselined = apply_baseline(suppressed, baseline)
-    score, grade, breakdown = compute_repo_truth_score(baselined)
+    score, grade, breakdown = compute_repo_truth_score(baselined, claims=verified_claims)
 
     duration = time.perf_counter() - start_time
     stats = ScanStats(
@@ -161,7 +173,7 @@ def scan(
         root=str(target_root),
         stats=stats,
         findings=baselined,
-        claims=[],
+        claims=verified_claims,
         score=score,
         grade=grade,
         score_breakdown=breakdown,
@@ -182,6 +194,24 @@ def scan(
         sarif_output = render_sarif_report(report, out_file)
         if not out_file and ("sarif" in format and len(format) == 1):
             console.print(sarif_output)
+
+    if "md" in format or "markdown" in format:
+        out_file = (
+            out / "report.md"
+            if len(format) > 1 or out != Path(".plumbline/out")
+            else Path("PLUMBLINE_REPORT.md")
+        )
+        write_markdown_report(report, out_file)
+        if not out_file and ("md" in format and len(format) == 1):
+            console.print(render_markdown_report(report))
+
+    if "html" in format:
+        out_file = (
+            out / "report.html"
+            if len(format) > 1 or out != Path(".plumbline/out")
+            else Path("report.html")
+        )
+        write_html_report(report, out_file)
 
     if "terminal" in format and not quiet:
         render_terminal_report(report, console)

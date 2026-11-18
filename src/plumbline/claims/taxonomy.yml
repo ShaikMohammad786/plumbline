@@ -1,0 +1,312 @@
+# Plumbline Claim Ledger Taxonomy
+# 20 standard capability claim categories with trigger patterns, positive evidence recipes, and counter-evidence recipes.
+
+authentication:
+  triggers:
+    - '\b(jwt|json web token|bearer token|auth0|oauth2?|sso|single sign-on)\b'
+    - '\b(user authentication|login system|session-based auth|authenticates? users?)\b'
+  positive:
+    imports:
+      - 'jwt'
+      - 'jose'
+      - 'passport'
+      - 'auth0'
+      - 'flask_login'
+      - 'django.contrib.auth'
+    calls:
+      - 'login'
+      - 'authenticate'
+      - 'decode_token'
+      - 'verify_token'
+    guard_keywords:
+      - 'authenticated'
+      - 'login_required'
+      - 'current_user'
+  counter_evidence:
+    rules:
+      - 'SEC008'
+
+authorization:
+  triggers:
+    - '\b(rbac|role-based access control|permissions? system|fine-grained permissions?)\b'
+    - '\b(authorizes? requests?|tenant isolation|access control list|acl)\b'
+  positive:
+    calls:
+      - 'check_permission'
+      - 'has_permission'
+      - 'require_role'
+      - 'authorize'
+    guard_keywords:
+      - 'permission'
+      - 'role'
+      - 'roles'
+      - 'scopes'
+  counter_evidence:
+    rules:
+      - 'SEC008'
+      - 'SEC010'
+
+encryption:
+  triggers:
+    - '\b(encrypt(s|ed|ion)? at rest|aes[-_]256|end-to-end encrypt(ed|ion)|cryptographic cipher)\b'
+  positive:
+    imports:
+      - 'cryptography'
+      - 'crypto'
+      - 'aes'
+      - 'pycryptodome'
+    calls:
+      - 'encrypt'
+      - 'cipher'
+      - 'AES'
+  counter_evidence:
+    rules:
+      - 'SEC006'
+
+password_hashing:
+  triggers:
+    - '\b(password hash(ing|ed)?|bcrypt|argon2|pbkdf2|scrypt)\b'
+  positive:
+    imports:
+      - 'bcrypt'
+      - 'argon2'
+      - 'passlib'
+      - 'hashlib.pbkdf2_hmac'
+    calls:
+      - 'hashpw'
+      - 'generate_password_hash'
+      - 'check_password_hash'
+  counter_evidence:
+    rules:
+      - 'SEC006'
+
+input_validation:
+  triggers:
+    - '\b(input validation|sanitiz(es?|ed|ing) input|validat(es?|ed|ing) requests?|schema validation)\b'
+  positive:
+    imports:
+      - 'pydantic'
+      - 'zod'
+      - 'joi'
+      - 'marshmallow'
+      - 'cerberus'
+      - 'validator'
+    calls:
+      - 'validate'
+      - 'parse_obj'
+      - 'safe_parse'
+  counter_evidence:
+    rules:
+      - 'SEC002'
+      - 'SEC003'
+      - 'SEC004'
+
+rate_limiting:
+  triggers:
+    - '\b(rate[- ]limit(ing|ed|er)?|ddos protection|throttle requests?|throttling)\b'
+  positive:
+    imports:
+      - 'slowapi'
+      - 'express-rate-limit'
+      - 'flask_limiter'
+      - 'django-ratelimit'
+      - 'redis_rate_limit'
+    calls:
+      - 'limiter'
+      - 'rate_limit'
+      - 'throttle'
+  counter_evidence:
+    rules:
+      - 'SEC011'
+
+caching:
+  triggers:
+    - '\b(cach(ing|ed|e)|redis cache|memcached|in-memory cache|ttl cache)\b'
+  positive:
+    imports:
+      - 'redis'
+      - 'memcache'
+      - 'cachetools'
+      - 'lru_cache'
+    calls:
+      - 'cache'
+      - 'setex'
+      - 'lru_cache'
+
+logging:
+  triggers:
+    - '\b(structured logg(ing|er)|audit log(s|ging)?|observability|log levels?)\b'
+  positive:
+    imports:
+      - 'logging'
+      - 'loguru'
+      - 'winston'
+      - 'pino'
+      - 'logrus'
+      - 'zap'
+    calls:
+      - 'getLogger'
+      - 'info'
+      - 'warning'
+      - 'error'
+
+error_handling:
+  triggers:
+    - '\b(graceful error handling|resilient error handling|centralized error handler)\b'
+  positive:
+    calls:
+      - 'exception_handler'
+      - 'catch'
+      - 'handle_error'
+  counter_evidence:
+    rules:
+      - 'SLP001'
+
+pagination:
+  triggers:
+    - '\b(paginat(ed|ion)|cursor-based paginat(ion|ed)|page and limit|offset pagination)\b'
+  positive:
+    calls:
+      - 'paginate'
+      - 'offset'
+      - 'limit'
+      - 'cursor'
+    variables:
+      - 'page'
+      - 'page_size'
+      - 'limit'
+      - 'offset'
+
+retries:
+  triggers:
+    - '\b(exponential backoff|automatic retries|retry logic|retry mechanism)\b'
+  positive:
+    imports:
+      - 'tenacity'
+      - 'backoff'
+      - 'retry'
+      - 'axios-retry'
+    calls:
+      - 'retry'
+      - 'backoff'
+
+tests:
+  triggers:
+    - '\b(unit tests?|test suite|100% test coverage|automated tests?|e2e tests?|integration tests?)\b'
+  positive:
+    files:
+      - 'test_'
+      - '_test.'
+      - '.test.'
+      - '.spec.'
+      - 'tests/'
+    imports:
+      - 'pytest'
+      - 'unittest'
+      - 'jest'
+      - 'mocha'
+  counter_evidence:
+    rules:
+      - 'GAP003'
+
+ci:
+  triggers:
+    - '\b(github actions?|ci/cd pipeline|continuous integration|automated build)\b'
+  positive:
+    files:
+      - '.github/workflows/'
+      - '.gitlab-ci.yml'
+      - '.circleci/'
+      - 'Jenkinsfile'
+  counter_evidence:
+    rules:
+      - 'SEC013'
+
+docker:
+  triggers:
+    - '\b(docker container(ized)?|docker-compose|containerized deployment|production dockerfile)\b'
+  positive:
+    files:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-compose.yaml'
+  counter_evidence:
+    rules:
+      - 'SEC012'
+
+database:
+  triggers:
+    - '\b(postgresql|postgres|mysql|sqlite|mongodb|prisma|sqlalchemy|orm|database migrations?)\b'
+  positive:
+    imports:
+      - 'sqlalchemy'
+      - 'prisma'
+      - 'psycopg2'
+      - 'asyncpg'
+      - 'mysql'
+      - 'sqlite3'
+      - 'mongoose'
+      - 'typeorm'
+    calls:
+      - 'session'
+      - 'query'
+      - 'connect'
+
+api:
+  triggers:
+    - '\b(rest api|restful api|graphql api|fastapi endpoints?|express router|api service)\b'
+  positive:
+    imports:
+      - 'fastapi'
+      - 'flask'
+      - 'express'
+      - 'gin'
+      - 'chi'
+    routes_present: true
+
+real_time:
+  triggers:
+    - '\b(real-time|websocket(s)?|socket\.io|sse|server-sent events|pub/sub)\b'
+  positive:
+    imports:
+      - 'websockets'
+      - 'socketio'
+      - 'ws'
+      - 'sse_starlette'
+    calls:
+      - 'websocket'
+      - 'emit'
+      - 'broadcast'
+
+offline:
+  triggers:
+    - '\b(offline-first|works? offline|offline by default|no internet required|offline cache)\b'
+  positive:
+    calls:
+      - 'cache'
+      - 'local_storage'
+      - 'offline'
+      - 'disk_cache'
+
+i18n:
+  triggers:
+    - '\b(internationalization|i18n|localization|l10n|multi-language support)\b'
+  positive:
+    imports:
+      - 'i18next'
+      - 'gettext'
+      - 'babel'
+      - 'react-intl'
+    calls:
+      - 't'
+      - 'gettext'
+      - '_'
+
+accessibility:
+  triggers:
+    - '\b(accessible|a11y|wcag|screen reader friendly|aria attributes)\b'
+  positive:
+    calls:
+      - 'aria'
+      - 'role'
+      - 'alt'

@@ -19,3 +19,12 @@ def render_json_report(report: Report, out_path: Optional[Path] = None) -> str:
         out_path.write_text(json_str, encoding="utf-8")
 
     return json_str
+
+
+def write_json_report(report: Report, out_path: Optional[Path] = None) -> Path:
+    """Serialize Report model and save directly to file."""
+    if out_path is None:
+        out_path = Path("report.json")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    render_json_report(report, out_path)
+    return out_path

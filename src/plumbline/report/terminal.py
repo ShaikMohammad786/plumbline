@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -107,7 +108,43 @@ def render_terminal_report(report: Report, console: Optional[Console] = None) ->
             "[bold green]✔ Zero active findings detected! Codebase meets all checked truth standards.[/bold green]"
         )
 
-    # 4. Baselines & Suppressions Summary
+    # 4. Claim Ledger Table
+    if report.claims:
+        c.print()
+        claims_table = Table(
+            title="Claim Ledger (Documentation vs Code Reality)",
+            box=box.ROUNDED,
+            expand=True,
+            header_style="bold magenta",
+        )
+        claims_table.add_column("Verdict", style="bold", width=14)
+        claims_table.add_column("Category", width=16)
+        claims_table.add_column("Documented Claim", ratio=3)
+        claims_table.add_column("Source", width=22)
+
+        verdict_styles = {
+            "VERIFIED": "bold green",
+            "PARTIAL": "bold yellow",
+            "UNSUPPORTED": "bold red",
+            "CONTRADICTED": "bold bright_red",
+            "UNCHECKED": "dim",
+        }
+        for clm in report.claims[:10]:
+            v_style = verdict_styles.get(clm.verdict.value, "white")
+            loc_str = f"{clm.source.path}:{clm.source.start_line}"
+            claims_table.add_row(
+                f"[{v_style}]{clm.verdict.value}[/{v_style}]",
+                clm.claim_type,
+                clm.text,
+                loc_str,
+            )
+        c.print(claims_table)
+        if len(report.claims) > 10:
+            c.print(
+                f"[dim]... and {len(report.claims) - 10} more claims (view in HTML or JSON report).[/dim]"
+            )
+
+    # 5. Baselines & Suppressions Summary
     suppressed_count = sum(1 for f in report.findings if f.suppressed)
     baselined_count = sum(1 for f in report.findings if f.baselined)
     if suppressed_count > 0 or baselined_count > 0:

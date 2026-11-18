@@ -98,12 +98,27 @@ def extract_file_facts(path: str, language: Optional[str], content: str) -> UCMF
                 body_bytes = content.encode("utf-8")[def_node.start_byte : def_node.end_byte]
                 body_hash = hashlib.sha256(body_bytes).hexdigest()[:16]
 
+                params: list[str] = []
+                if "symbol.function.params" in match_dict:
+                    p_node = match_dict["symbol.function.params"][0]
+                    p_text = (
+                        content.encode("utf-8")[p_node.start_byte : p_node.end_byte]
+                        .decode("utf-8", errors="replace")
+                        .strip("()")
+                    )
+                    params = [
+                        p.strip().split(":")[0].split("=")[0].strip()
+                        for p in p_text.split(",")
+                        if p.strip() and p.strip() not in ("self", "cls")
+                    ]
+
                 facts.symbols.append(
                     Symbol(
                         name=name_text,
                         kind="function",
                         start_line=start_l,
                         end_line=end_l,
+                        params=params,
                         body_hash=body_hash,
                     )
                 )

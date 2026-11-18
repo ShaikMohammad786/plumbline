@@ -1,6 +1,7 @@
 """Plumbline detector rules."""
 
 from plumbline.detectors.base import RuleSpec
+from plumbline.detectors.claims.rules import *  # noqa: F403
 from plumbline.detectors.context import ScanContext
 from plumbline.detectors.gaps.rules import *  # noqa: F403
 from plumbline.detectors.registry import registry, rule

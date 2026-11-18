@@ -97,3 +97,12 @@ def render_sarif_report(report: Report, out_path: Optional[Path] = None) -> str:
         out_path.write_text(rendered, encoding="utf-8")
 
     return rendered
+
+
+def write_sarif_report(report: Report, out_path: Optional[Path] = None) -> Path:
+    """Serialize Report to SARIF 2.1.0 JSON and save directly to file."""
+    if out_path is None:
+        out_path = Path("report.sarif")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    render_sarif_report(report, out_path)
+    return out_path

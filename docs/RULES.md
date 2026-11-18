@@ -1,4 +1,9 @@
-﻿- **DEP001** (critical): Dependency not found on official registry 
+﻿- **CLM001** (high): Claim asserted in documentation without code evidence
+- **CLM002** (high): Documentation claim contradicted by code evidence
+- **CLM003** (medium): Claim only partly implemented with missing controls
+- **CLM004** (high): Fake implementation: non-test function ignores parameters 
+and returns literals
+- **DEP001** (critical): Dependency not found on official registry 
 (hallucinated package)
 - **DEP002** (high): Dependency typosquatting of popular package
 - **DEP003** (medium): Brand-new single-release dependency with no source 

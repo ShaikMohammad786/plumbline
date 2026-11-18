@@ -107,3 +107,34 @@ This log provides a truthful, complete audit trail of all AI interactions, model
   - SARIF 2.1.0 output verified via `plumb scan . --format sarif --out .plumbline/out`.
 - **Open issues**:
   - Phase 4: Claim Ledger extraction, taxonomy verification (`CLM001`-`CLM004`), and HTML single-file report.
+
+---
+
+## 2026-11-18 15:30 IST, Phase 4: Claim Ledger, CLM Rules, Markdown & Standalone HTML Reports
+- **Tool and model**: Antigravity, Gemini 3.8 Flash (High)
+- **Prompt summary**: Implemented Plumbline's Claim Ledger (20-category capability taxonomy, documentation sentence extractor, rule-based verification engine, and CLM001-CLM004 detectors), full Markdown reporting (`PLUMBLINE_REPORT.md`), and single-file, zero-dependency, offline-first interactive HTML reporting (`report.html`) with SVG score ring, live search, and multi-dimensional filters.
+- **What the AI produced**:
+  - `src/plumbline/claims/`: `taxonomy.yml` (20 capability categories with triggers, positive evidence recipes, and counter-evidence rules), `extract.py` (NLP sentence splitter and markdown cleaner), `verify.py` (rule-based verifier assigning `VERIFIED`, `PARTIAL`, `UNSUPPORTED`, `CONTRADICTED`), `__init__.py`.
+  - `src/plumbline/detectors/claims/`: `rules.py` and `__init__.py` implementing all 4 CLM rules (`CLM001` unsupported claim, `CLM002` contradicted claim, `CLM003` partial claim, `CLM004` fake implementation returning literals).
+  - `src/plumbline/report/`:
+    - `markdown.py`: Generates `PLUMBLINE_REPORT.md` with executive scorecard, findings distribution, top findings table, claim ledger, and score breakdown.
+    - `html.py`: Generates self-contained, single-file HTML report with inline CSS and JS, zero external network dependencies, file:// compatibility, SVG score ring, interactive filter buttons (by family, severity), live search input, expandable finding cards, and interactive claim ledger table.
+    - `json_out.py` & `sarif.py`: Added direct file writing helpers `write_json_report` and `write_sarif_report`.
+    - `terminal.py`: Added Claim Ledger table rendering.
+  - CLI integration: Added `--format md` and `--format html`, and `--no-claims` flag to `plumb scan`.
+  - Test suites: `tests/unit/test_claims.py` (taxonomy loading, sentence extraction, verification lifecycle, CLM004 fake implementations) and `tests/unit/test_reports.py` (Markdown structure, HTML offline/file:// independence).
+  - Updated `docs/RULES.md` with all 45 rules registered across all 5 families (SEC, DEP, SLP, GAP, CLM).
+- **What I changed or rejected, and why**:
+  - Extracted function parameters in Tree-Sitter UCM builder (`builder.py`) so `Symbol.params` is populated natively for function/method nodes, enabling `CLM004` to accurately detect functions that accept arguments but immediately return hardcoded literals without using them.
+  - Excluded rule reference files (`docs/RULES.md`, `docs/SCORING.md`, `docs/BRIEF.md`) from documentation claim extraction to prevent detector rule descriptions from being mistakenly extracted as claimed software capabilities.
+  - Refined `extract_claims` to filter out bugfix, rejection, and negative changelog sentences (e.g. containing "false-positive", "removed", "rejected", "fixed").
+  - Refined `detect_slp002` to ignore HTML template input attributes `placeholder="..."` and `placeholder='...'`, preventing HTML search inputs from triggering placeholder/mock data findings.
+  - Fixed circular import between `plumbline.claims` and `plumbline.detectors` using `TYPE_CHECKING` guards.
+- **How it was verified**:
+  - 50 of 50 unit and golden tests passing (`pytest`).
+  - Code coverage achieved 86% across `src/plumbline` (exceeding the 80% requirement).
+  - Strict type checking (`mypy src tests`) and linting (`ruff check .`, `ruff format --check .`) passed with 0 errors across 66 source files.
+  - Self-scan dogfooding: `plumb scan .` completed in 0.45s with 0 Critical, 0 High findings, Repo Truth Score 81/100 (Grade B), and exit code 0.
+  - Verified simultaneous export to `.plumbline/out/{report.html, report.json, report.md, report.sarif}`.
+- **Open issues**:
+  - Phase 5: Agent Brain (`--llm` triage loop, mock/live providers, prompt sandboxing with `<untrusted_code>`, and secret redaction).
