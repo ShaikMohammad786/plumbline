@@ -357,7 +357,7 @@ Plumbline believes in radical transparency regarding static analysis boundaries:
 ## AI Usage Disclosure
 
 In compliance with hackathon guidelines, all AI tool usage during the design, coding, and debugging of Plumbline is logged truthfully in [AI_LOG.md](AI_LOG.md).
-- **Core Architecture & Implementation**: Designed with Antigravity and Claude 3.5 Sonnet / Claude 3.7.
+- **Core Architecture & Implementation**: Designed with Antigravity and Claude sonnet 5.5
 - **Verification**: 100% of generated code was verified by strict automated testing, `ruff` linting, `mypy` strict typing, and benchmark ground-truth assertions.
 
 ---

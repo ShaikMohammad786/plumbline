@@ -1,56 +1,9 @@
 {
   "name": "plumbline",
   "version": "0.1.0",
-  "tagline": "A plumb line shows whether a wall is true. Plumbline shows whether your repo is.",
-  "description": "Architecture-agnostic repository truth auditor and agent gate that finds security vulnerabilities, AI slop, coding gaps, and verifies documentation claims (Claim Ledger).",
-  "author": "Shaik Mohammad",
-  "license": "MIT",
-  "repository": "https://github.com/ShaikMohammad786/plumbline",
-  "entrypoint": "plumb",
-  "type": "cli_agent",
   "language": "python",
-  "environment": {
-    "python": ">=3.11",
-    "install": "pip install ."
-  },
-  "execution": {
-    "command": "plumb scan .",
-    "gate": "plumb gate",
-    "bench": "plumb bench",
-    "mcp": "plumb mcp",
-    "offline_by_default": true,
-    "api_key_required": false
-  },
-  "capabilities": [
-    "security-analysis",
-    "sast",
-    "secret-detection",
-    "supply-chain-audit",
-    "hallucination-detection",
-    "ai-slop-detection",
-    "code-gap-analysis",
-    "claim-ledger-verification",
-    "mcp-server",
-    "pre-commit-gate",
-    "safe-autofix"
-  ],
-  "evaluation": {
-    "benchmark_command": "plumb bench",
-    "benchmark_results": "bench/RESULTS.md",
-    "metrics": {
-      "target_recall": 0.85,
-      "target_precision": 0.85,
-      "measured_recall": 1.0,
-      "measured_precision": 0.867,
-      "measured_f1": 0.929,
-      "decoy_precision": 1.0,
-      "claim_ledger_accuracy": 1.0
-    }
-  },
-  "artifacts": {
-    "demo_report": "docs/demo/index.html",
-    "benchmark_suite": "bench/expected.json",
-    "rules_catalog": "docs/RULES.md",
-    "ai_log": "AI_LOG.md"
-  }
+  "install": "python -m pip install -r requirements.txt",
+  "test": "python -m unittest discover -v",
+  "start": "python app.py",
+  "port": 8000
 }
