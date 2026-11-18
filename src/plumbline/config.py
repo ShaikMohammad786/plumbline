@@ -33,6 +33,7 @@ class LLMConfig(BaseModel):
     provider: str = "compat"
     model: str = "gpt-4o"
     api_key_env: str = "OPENAI_API_KEY"
+    base_url: Optional[str] = None
     max_total_tokens: int = 100000
     redact: bool = True
 

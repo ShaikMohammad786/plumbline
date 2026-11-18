@@ -90,6 +90,8 @@ def render_terminal_report(report: Report, console: Optional[Console] = None) ->
             )
             loc_str = f"{f.location.path}:{f.location.start_line}"
             detail_text = f"{f.message}\n[dim]Fix: {f.fix_hint}[/dim]"
+            if f.llm:
+                detail_text += f"\n[dim italic]🤖 LLM ({f.llm.model}): {f.llm.verdict.upper()} — {f.llm.rationale}[/dim italic]"
 
             findings_table.add_row(
                 f.rule_id,

@@ -60,6 +60,7 @@ class LLMVerdict(BaseModel):
     verdict: str  # confirm | dismiss | downgrade
     rationale: str
     model: str
+    fix_patch: Optional[str] = None
 
 
 class Finding(BaseModel):
@@ -79,6 +80,7 @@ class Finding(BaseModel):
     source: str = "builtin"
     file_class: FileClass = FileClass.PROD
     llm: Optional[LLMVerdict] = None
+    llm_dismissed: bool = False
     suppressed: bool = False
     baselined: bool = False
 

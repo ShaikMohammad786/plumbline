@@ -12,6 +12,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from plumbline.brain import reverify_claims, run_triage
 from plumbline.claims.extract import extract_claims
 from plumbline.claims.verify import verify_all_claims
 from plumbline.config import load_config
@@ -67,6 +68,14 @@ def scan(
     ),
     online: bool = typer.Option(False, "--online", help="Enable online registry lookups"),
     llm: bool = typer.Option(False, "--llm", help="Enable LLM triage and explanation"),
+    llm_provider: str = typer.Option(
+        "compat", "--llm-provider", help="LLM provider (openai|anthropic|gemini|compat|mock)"
+    ),
+    llm_model: Optional[str] = typer.Option(None, "--llm-model", help="Model name"),
+    llm_max_findings: int = typer.Option(25, "--llm-max-findings", help="Max findings to triage"),
+    show_dismissed: bool = typer.Option(
+        False, "--show-dismissed", help="Show findings dismissed by LLM"
+    ),
     baseline: Optional[Path] = typer.Option(None, "--baseline", help="Custom baseline JSON file"),
     no_claims: bool = typer.Option(
         False, "--no-claims", help="Skip claim ledger extraction and verification"
@@ -155,7 +164,22 @@ def scan(
     deduped = deduplicate_findings(raw_findings)
     suppressed = apply_suppressions(deduped, context)
     baselined = apply_baseline(suppressed, baseline)
-    score, grade, breakdown = compute_repo_truth_score(baselined, claims=verified_claims)
+
+    if llm:
+        llm_cfg = cfg.llm.model_copy()
+        if llm_provider != "compat":
+            llm_cfg.provider = llm_provider
+        if llm_model:
+            llm_cfg.model = llm_model
+        baselined = run_triage(baselined, context, llm_cfg, max_findings=llm_max_findings)
+        if not no_claims and verified_claims:
+            verified_claims = reverify_claims(verified_claims, context, llm_cfg)
+        notes.append(f"LLM triage enabled (provider: {llm_cfg.provider}, model: {llm_cfg.model})")
+
+    effective_findings = (
+        baselined if show_dismissed else [f for f in baselined if not f.llm_dismissed]
+    )
+    score, grade, breakdown = compute_repo_truth_score(effective_findings, claims=verified_claims)
 
     duration = time.perf_counter() - start_time
     stats = ScanStats(
@@ -217,7 +241,11 @@ def scan(
         render_terminal_report(report, console)
 
     # 6. Exit code logic
-    active_findings = [f for f in baselined if not f.suppressed and not f.baselined]
+    active_findings = [
+        f
+        for f in baselined
+        if not f.suppressed and not f.baselined and (show_dismissed or not f.llm_dismissed)
+    ]
     threshold_sevs = SEVERITY_THRESHOLDS.get(fail_on.lower(), SEVERITY_THRESHOLDS["high"])
     failing_findings = [f for f in active_findings if f.severity in threshold_sevs]
 

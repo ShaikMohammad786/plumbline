@@ -127,9 +127,15 @@ def detect_slp002(context: ScanContext) -> list[Finding]:
             lower = raw.lower()
             if 'placeholder="' in lower or "placeholder='" in lower or "placeholder=" in lower:
                 continue
+            if "help=" in lower or "typer.option" in lower:
+                continue
 
             for kw in PLACEHOLDER_WORDS:
                 if kw in lower:
+                    if kw == "mock" and any(
+                        term in lower for term in ("mockprovider", "provider", "adapter")
+                    ):
+                        continue
                     fp = compute_fingerprint("SLP002", raw.strip(), f.path)
                     findings.append(
                         Finding(

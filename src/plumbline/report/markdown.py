@@ -69,6 +69,8 @@ def render_markdown_report(report: Report) -> str:
             sev_badge = f.severity.value.upper()
             loc_str = f"`{f.location.path}:{f.location.start_line}`"
             detail = f"**{f.title}**: {f.message}<br/>*Fix:* {f.fix_hint}"
+            if f.llm:
+                detail += f"<br/>*🤖 LLM ({f.llm.model}):* **{f.llm.verdict.upper()}** — {f.llm.rationale}"
             lines.append(f"| **{sev_badge}** | `{f.rule_id}` | {loc_str} | {detail} |")
         lines.append("")
 
