@@ -71,6 +71,8 @@ def extract_claims(context: ScanContext) -> list[Claim]:
                 or "rules.md" in name_lower
                 or "scoring.md" in name_lower
                 or "brief.md" in name_lower
+                or "demo_script" in name_lower
+                or "demo/" in name_lower
             ):
                 continue
             target_files.append(f)
@@ -85,6 +87,8 @@ def extract_claims(context: ScanContext) -> list[Claim]:
                 in_code_block = not in_code_block
                 continue
             if in_code_block or not stripped:
+                continue
+            if stripped.startswith("|") and stripped.endswith("|"):
                 continue
 
             cleaned = _clean_markdown_line(stripped)

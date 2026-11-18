@@ -121,7 +121,7 @@ def detect_slp002(context: ScanContext) -> list[Finding]:
                 stripped.startswith('"') and stripped.endswith('",')
             ):
                 continue
-            if "detectors" in f.path and stripped.startswith(("#", "//", "/*", "*")):
+            if stripped.startswith(("#", "//", "/*", "*")):
                 continue
 
             lower = raw.lower()
@@ -340,9 +340,10 @@ SLP005_SPEC = RuleSpec(
 )
 
 
-def _tokenize_shingles(text: str, n: int = 5) -> set[str]:
-    # Normalize function and variable names in declaration
+def _tokenize_shingles(text: str, n: int = 3) -> set[str]:
+    # Normalize function declaration and literal numbers
     normalized = re.sub(r"\b(?:def|function|func)\s+[a-zA-Z0-9_]+", "def _fn_", text)
+    normalized = re.sub(r"\b\d+(?:\.\d+)?\b", "_num_", normalized)
     tokens = re.findall(r"[A-Za-z0-9_]+", normalized.lower())
     if len(tokens) < n:
         return set(tokens)

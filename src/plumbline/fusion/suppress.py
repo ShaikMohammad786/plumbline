@@ -24,6 +24,8 @@ def apply_suppressions(findings: list[Finding], context: ScanContext) -> list[Fi
 
     # 1. Parse all ignore comments across files
     for f in context.files:
+        if f.path.endswith((".html", ".json", ".sarif", ".map")):
+            continue
         lines = context.get_lines(f.path)
         file_suppressions: dict[int, list[tuple[str, str]]] = {}
 
@@ -36,7 +38,8 @@ def apply_suppressions(findings: list[Finding], context: ScanContext) -> list[Fi
 
                 # Reason is mandatory! An ignore without a reason is GAP009
                 if not reason:
-                    fp = compute_fingerprint("GAP009", line, f.path)
+                    snippet = line[:500].strip()
+                    fp = compute_fingerprint("GAP009", snippet, f.path)
                     gap009_findings.append(
                         Finding(
                             id=fp,
@@ -47,7 +50,7 @@ def apply_suppressions(findings: list[Finding], context: ScanContext) -> list[Fi
                             severity=FindingSeverity.LOW,
                             confidence=FindingConfidence.HIGH,
                             location=Location(path=f.path, start_line=line_no, end_line=line_no),
-                            evidence=Evidence(snippet=line),
+                            evidence=Evidence(snippet=snippet),
                             fix_hint="Add a mandatory explanation why this finding is ignored.",
                             tags=["hygiene"],
                             file_class=f.file_class,

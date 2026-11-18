@@ -233,7 +233,7 @@ def scan(
         out_file = out / "report.json" if len(format) > 1 or out != Path(".plumbline/out") else None
         json_output = render_json_report(report, out_file)
         if not out_file and ("json" in format and len(format) == 1):
-            console.print(json_output)
+            console.print(json_output, soft_wrap=True, highlight=False)
 
     if "sarif" in format:
         out_file = (
@@ -241,7 +241,7 @@ def scan(
         )
         sarif_output = render_sarif_report(report, out_file)
         if not out_file and ("sarif" in format and len(format) == 1):
-            console.print(sarif_output)
+            console.print(sarif_output, soft_wrap=True, highlight=False)
 
     if "md" in format or "markdown" in format:
         out_file = (
@@ -657,6 +657,29 @@ def mcp() -> None:
     from plumbline.mcp_server import run_mcp_server
 
     run_mcp_server()
+
+
+@app.command()
+def bench(
+    bench_dir: Path = typer.Option(
+        Path("bench"),
+        "--bench-dir",
+        "-b",
+        help="Path to benchmark directory containing expected.json, victim, and victim-go.",
+    ),
+    out: Path = typer.Option(
+        Path("bench/RESULTS.md"),
+        "--out",
+        "-o",
+        help="Output markdown file for benchmark scorecard results.",
+    ),
+) -> None:
+    """Run benchmark evaluation suite and output precision, recall, and F1."""
+    from bench.run_bench import run_benchmark
+
+    res = run_benchmark(bench_dir=bench_dir.resolve(), results_path=out.resolve(), console=console)
+    if not res.target_met:
+        raise typer.Exit(code=1)
 
 
 @app.command()

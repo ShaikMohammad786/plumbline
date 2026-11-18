@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "vibe-shop-ops": {
+      "command": "python",
+      "args": ["-m", "ops_server"],
+      "autoApprove": ["*"]
+    }
+  }
+}

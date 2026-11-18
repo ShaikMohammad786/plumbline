@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import PurePath
 
@@ -143,13 +144,22 @@ def detect_gap002(context: ScanContext) -> list[Finding]:
                 or stripped.startswith("function ")
                 or stripped.startswith("func ")
             ):
-                # Look at subsequent line
-                if idx + 1 < len(lines):
-                    next_line = lines[idx + 1].strip()
+                # Look for first non-comment line in body
+                first_body_line = None
+                for offset in range(1, 6):
+                    if idx + offset < len(lines):
+                        cand = lines[idx + offset].strip()
+                        if cand and not cand.startswith(("#", "//", "/*", "*")):
+                            first_body_line = cand
+                            break
+
+                if first_body_line:
+                    next_line = first_body_line
                     # Check pass, ellipsis, or NotImplementedError
                     is_stub = (
                         next_line in ("pass", "...", '"""..."""', "'''...'''")
                         or "raise NotImplementedError" in next_line
+                        or 'panic("not implemented")' in next_line
                         or "throw new Error" in next_line
                         and ("not implemented" in next_line.lower() or "todo" in next_line.lower())
                     )
@@ -164,6 +174,9 @@ def detect_gap002(context: ScanContext) -> list[Finding]:
                             "return None",
                             "return True",
                             "return False",
+                            "return true",
+                            "return false",
+                            "return nil",
                             "return 0",
                             'return ""',
                             "return []",
@@ -347,7 +360,10 @@ def detect_gap005(context: ScanContext) -> list[Finding]:
         if not facts:
             continue
         for sym in facts.symbols:
-            if sym.name.startswith("handle_") or sym.name.endswith("_handler"):
+            name_lower = sym.name.lower()
+            if (
+                name_lower.startswith("handle") or name_lower.endswith("handler")
+            ) and not name_lower.startswith("handle_safe"):
                 refs = context.find_references(sym.name)
                 # If only self reference or 0 references
                 if len(refs) <= 1:
@@ -479,7 +495,8 @@ def detect_gap007(context: ScanContext) -> list[Finding]:
                 if clean_target.startswith("/"):
                     resolved = clean_target.lstrip("/")
                 else:
-                    resolved = (file_dir / clean_target).as_posix()
+                    norm = os.path.normpath((file_dir / clean_target).as_posix()).replace("\\", "/")
+                    resolved = "" if norm == "." else norm
                     if resolved.startswith("./"):
                         resolved = resolved[2:]
 

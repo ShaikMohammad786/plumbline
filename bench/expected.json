@@ -1,0 +1,966 @@
+{
+  "schema_version": "plumbline.bench.expected/1",
+  "total_planted_issues": 78,
+  "total_decoys": 20,
+  "total_claims": 12,
+  "planted_issues": [
+    {
+      "rule_id": "SEC014",
+      "path": ".cursorrules",
+      "line_start": 4,
+      "line_end": 4,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Prompt-injection instruction or hidden directional unicode in agent-read file"
+    },
+    {
+      "rule_id": "SEC013",
+      "path": ".github/workflows/deploy.yml",
+      "line_start": 4,
+      "line_end": 4,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "GitHub Actions pull_request_target with PR checkout or unpinned actions"
+    },
+    {
+      "rule_id": "SEC012",
+      "path": "Dockerfile",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Dockerfile root user, unpinned base image, or pipe-to-shell"
+    },
+    {
+      "rule_id": "SLP002",
+      "path": "Dockerfile",
+      "line_start": 3,
+      "line_end": 3,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Mock or placeholder data in production path"
+    },
+    {
+      "rule_id": "SEC012",
+      "path": "Dockerfile",
+      "line_start": 4,
+      "line_end": 4,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Dockerfile root user, unpinned base image, or pipe-to-shell"
+    },
+    {
+      "rule_id": "SLP002",
+      "path": "Dockerfile",
+      "line_start": 4,
+      "line_end": 4,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Mock or placeholder data in production path"
+    },
+    {
+      "rule_id": "GAP008",
+      "path": "README.md",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Missing repository baseline hygiene"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 6,
+      "line_end": 6,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 7,
+      "line_end": 7,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 8,
+      "line_end": 8,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 9,
+      "line_end": 9,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 10,
+      "line_end": 10,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "CLM003",
+      "path": "README.md",
+      "line_start": 14,
+      "line_end": 14,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim only partly implemented with missing controls"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 16,
+      "line_end": 16,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "CLM001",
+      "path": "README.md",
+      "line_start": 17,
+      "line_end": 17,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Claim asserted in documentation without code evidence"
+    },
+    {
+      "rule_id": "GAP004",
+      "path": "api/auth.py",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Untested production module"
+    },
+    {
+      "rule_id": "SEC001",
+      "path": "api/auth.py",
+      "line_start": 7,
+      "line_end": 7,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Hardcoded secret or authentication credential"
+    },
+    {
+      "rule_id": "SEC006",
+      "path": "api/auth.py",
+      "line_start": 12,
+      "line_end": 12,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Weak cryptographic primitive or insecure random generator"
+    },
+    {
+      "rule_id": "GAP002",
+      "path": "api/auth.py",
+      "line_start": 21,
+      "line_end": 22,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unimplemented stub function or method"
+    },
+    {
+      "rule_id": "GAP001",
+      "path": "api/auth.py",
+      "line_start": 26,
+      "line_end": 26,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unresolved TODO, FIXME, HACK, or XXX"
+    },
+    {
+      "rule_id": "GAP001",
+      "path": "api/auth.py",
+      "line_start": 27,
+      "line_end": 27,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unresolved TODO, FIXME, HACK, or XXX"
+    },
+    {
+      "rule_id": "CLM004",
+      "path": "api/auth.py",
+      "line_start": 28,
+      "line_end": 30,
+      "family": "CLM",
+      "target": "bench/victim",
+      "title": "Fake implementation: non-test function ignores parameters and returns literals"
+    },
+    {
+      "rule_id": "GAP002",
+      "path": "api/auth.py",
+      "line_start": 28,
+      "line_end": 29,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unimplemented stub function or method"
+    },
+    {
+      "rule_id": "SEC007",
+      "path": "api/config.py",
+      "line_start": 4,
+      "line_end": 4,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Overly permissive CORS policy or production debug mode"
+    },
+    {
+      "rule_id": "SEC007",
+      "path": "api/config.py",
+      "line_start": 8,
+      "line_end": 8,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Overly permissive CORS policy or production debug mode"
+    },
+    {
+      "rule_id": "GAP004",
+      "path": "api/db.py",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Untested production module"
+    },
+    {
+      "rule_id": "SEC003",
+      "path": "api/db.py",
+      "line_start": 9,
+      "line_end": 9,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "SQL statement constructed via string concatenation or interpolation"
+    },
+    {
+      "rule_id": "SEC003",
+      "path": "api/db.py",
+      "line_start": 15,
+      "line_end": 15,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "SQL statement constructed via string concatenation or interpolation"
+    },
+    {
+      "rule_id": "GAP004",
+      "path": "api/orders.py",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Untested production module"
+    },
+    {
+      "rule_id": "DEP004",
+      "path": "api/orders.py",
+      "line_start": 2,
+      "line_end": 2,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Imported package not declared in project manifest"
+    },
+    {
+      "rule_id": "SLP002",
+      "path": "api/orders.py",
+      "line_start": 9,
+      "line_end": 9,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Mock or placeholder data in production path"
+    },
+    {
+      "rule_id": "SLP007",
+      "path": "api/orders.py",
+      "line_start": 16,
+      "line_end": 16,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Debug leftover in production code"
+    },
+    {
+      "rule_id": "SLP001",
+      "path": "api/orders.py",
+      "line_start": 33,
+      "line_end": 34,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Swallowed exception or empty catch block"
+    },
+    {
+      "rule_id": "SLP009",
+      "path": "api/orders.py",
+      "line_start": 40,
+      "line_end": 145,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Oversized or cyclomatically complex function"
+    },
+    {
+      "rule_id": "SLP006",
+      "path": "api/orders.py",
+      "line_start": 150,
+      "line_end": 151,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Redundant passthrough wrapper"
+    },
+    {
+      "rule_id": "GAP004",
+      "path": "api/payments.py",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Untested production module"
+    },
+    {
+      "rule_id": "DEP004",
+      "path": "api/payments.py",
+      "line_start": 3,
+      "line_end": 3,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Imported package not declared in project manifest"
+    },
+    {
+      "rule_id": "DEP004",
+      "path": "api/payments.py",
+      "line_start": 5,
+      "line_end": 5,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Imported package not declared in project manifest"
+    },
+    {
+      "rule_id": "DEP007",
+      "path": "api/payments.py",
+      "line_start": 5,
+      "line_end": 5,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Cross-ecosystem package name confusion"
+    },
+    {
+      "rule_id": "GAP002",
+      "path": "api/payments.py",
+      "line_start": 15,
+      "line_end": 16,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unimplemented stub function or method"
+    },
+    {
+      "rule_id": "GAP005",
+      "path": "api/payments.py",
+      "line_start": 15,
+      "line_end": 16,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unregistered handler or unreferenced export"
+    },
+    {
+      "rule_id": "SEC002",
+      "path": "api/payments.py",
+      "line_start": 21,
+      "line_end": 21,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Dynamic code or command execution with non-literal input"
+    },
+    {
+      "rule_id": "SEC004",
+      "path": "api/payments.py",
+      "line_start": 26,
+      "line_end": 26,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Unsafe deserialization of untrusted data"
+    },
+    {
+      "rule_id": "SEC005",
+      "path": "api/payments.py",
+      "line_start": 32,
+      "line_end": 32,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "TLS certificate verification disabled"
+    },
+    {
+      "rule_id": "SLP005",
+      "path": "api/payments.py",
+      "line_start": 41,
+      "line_end": 46,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Near-duplicate functions"
+    },
+    {
+      "rule_id": "GAP004",
+      "path": "api/utils.py",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Untested production module"
+    },
+    {
+      "rule_id": "SLP010",
+      "path": "api/utils.py",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Conflicting identifier naming stems"
+    },
+    {
+      "rule_id": "SLP003",
+      "path": "api/utils.py",
+      "line_start": 10,
+      "line_end": 11,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Tautological comment restating code name"
+    },
+    {
+      "rule_id": "SLP008",
+      "path": "api/utils.py",
+      "line_start": 16,
+      "line_end": 16,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Type escape hatch without reason"
+    },
+    {
+      "rule_id": "GAP009",
+      "path": "api/utils.py",
+      "line_start": 19,
+      "line_end": 19,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Suppression without reason"
+    },
+    {
+      "rule_id": "GAP004",
+      "path": "frontend/src/app.js",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Untested production module"
+    },
+    {
+      "rule_id": "DEP004",
+      "path": "frontend/src/app.js",
+      "line_start": 2,
+      "line_end": 2,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Imported package not declared in project manifest"
+    },
+    {
+      "rule_id": "SLP007",
+      "path": "frontend/src/app.js",
+      "line_start": 6,
+      "line_end": 6,
+      "family": "SLP",
+      "target": "bench/victim",
+      "title": "Debug leftover in production code"
+    },
+    {
+      "rule_id": "SEC002",
+      "path": "frontend/src/app.js",
+      "line_start": 9,
+      "line_end": 9,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Dynamic code or command execution with non-literal input"
+    },
+    {
+      "rule_id": "SEC015",
+      "path": "mcp_config.json",
+      "line_start": 6,
+      "line_end": 6,
+      "family": "SEC",
+      "target": "bench/victim",
+      "title": "Over-permissive agent or MCP configuration"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "package.json",
+      "line_start": 5,
+      "line_end": 5,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "DEP006",
+      "path": "package.json",
+      "line_start": 5,
+      "line_end": 5,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Unpinned, latest, or wildcard dependency version without lockfile"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "requirements.txt",
+      "line_start": 4,
+      "line_end": 4,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "DEP002",
+      "path": "requirements.txt",
+      "line_start": 7,
+      "line_end": 7,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Dependency typosquatting of popular package"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "requirements.txt",
+      "line_start": 7,
+      "line_end": 7,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "requirements.txt",
+      "line_start": 10,
+      "line_end": 10,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "requirements.txt",
+      "line_start": 13,
+      "line_end": 13,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "DEP006",
+      "path": "requirements.txt",
+      "line_start": 13,
+      "line_end": 13,
+      "family": "DEP",
+      "target": "bench/victim",
+      "title": "Unpinned, latest, or wildcard dependency version without lockfile"
+    },
+    {
+      "rule_id": "GAP002",
+      "path": "tests/test_api.py",
+      "line_start": 4,
+      "line_end": 5,
+      "family": "GAP",
+      "target": "bench/victim",
+      "title": "Unimplemented stub function or method"
+    },
+    {
+      "rule_id": "GAP008",
+      "path": "README.md",
+      "line_start": 1,
+      "line_end": 1,
+      "family": "GAP",
+      "target": "bench/victim-go",
+      "title": "Missing repository baseline hygiene"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "go.mod",
+      "line_start": 6,
+      "line_end": 6,
+      "family": "DEP",
+      "target": "bench/victim-go",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "DEP005",
+      "path": "go.mod",
+      "line_start": 7,
+      "line_end": 7,
+      "family": "DEP",
+      "target": "bench/victim-go",
+      "title": "Declared dependency is never imported in codebase"
+    },
+    {
+      "rule_id": "SEC001",
+      "path": "main.go",
+      "line_start": 15,
+      "line_end": 15,
+      "family": "SEC",
+      "target": "bench/victim-go",
+      "title": "Hardcoded secret or authentication credential"
+    },
+    {
+      "rule_id": "SLP002",
+      "path": "main.go",
+      "line_start": 18,
+      "line_end": 18,
+      "family": "SLP",
+      "target": "bench/victim-go",
+      "title": "Mock or placeholder data in production path"
+    },
+    {
+      "rule_id": "SEC005",
+      "path": "main.go",
+      "line_start": 23,
+      "line_end": 23,
+      "family": "SEC",
+      "target": "bench/victim-go",
+      "title": "TLS certificate verification disabled"
+    },
+    {
+      "rule_id": "SEC006",
+      "path": "main.go",
+      "line_start": 30,
+      "line_end": 30,
+      "family": "SEC",
+      "target": "bench/victim-go",
+      "title": "Weak cryptographic primitive or insecure random generator"
+    },
+    {
+      "rule_id": "GAP001",
+      "path": "main.go",
+      "line_start": 35,
+      "line_end": 35,
+      "family": "GAP",
+      "target": "bench/victim-go",
+      "title": "Unresolved TODO, FIXME, HACK, or XXX"
+    },
+    {
+      "rule_id": "GAP001",
+      "path": "main.go",
+      "line_start": 36,
+      "line_end": 36,
+      "family": "GAP",
+      "target": "bench/victim-go",
+      "title": "Unresolved TODO, FIXME, HACK, or XXX"
+    },
+    {
+      "rule_id": "GAP002",
+      "path": "main.go",
+      "line_start": 37,
+      "line_end": 38,
+      "family": "GAP",
+      "target": "bench/victim-go",
+      "title": "Unimplemented stub function or method"
+    },
+    {
+      "rule_id": "GAP005",
+      "path": "main.go",
+      "line_start": 43,
+      "line_end": 45,
+      "family": "GAP",
+      "target": "bench/victim-go",
+      "title": "Unregistered handler or unreferenced export"
+    },
+    {
+      "rule_id": "SLP007",
+      "path": "main.go",
+      "line_start": 51,
+      "line_end": 51,
+      "family": "SLP",
+      "target": "bench/victim-go",
+      "title": "Debug leftover in production code"
+    },
+    {
+      "rule_id": "SLP002",
+      "path": "main.go",
+      "line_start": 60,
+      "line_end": 60,
+      "family": "SLP",
+      "target": "bench/victim-go",
+      "title": "Mock or placeholder data in production path"
+    },
+    {
+      "rule_id": "GAP005",
+      "path": "main.go",
+      "line_start": 80,
+      "line_end": 85,
+      "family": "GAP",
+      "target": "bench/victim-go",
+      "title": "Unregistered handler or unreferenced export"
+    }
+  ],
+  "decoys": [
+    {
+      "id": "DEC001",
+      "target": "bench/victim",
+      "path": "api/db.py",
+      "line_start": 21,
+      "line_end": 23,
+      "rule_id": "SEC003",
+      "description": "Safe parameterized SQLite query with ? placeholder"
+    },
+    {
+      "id": "DEC002",
+      "target": "bench/victim",
+      "path": "api/db.py",
+      "line_start": 26,
+      "line_end": 28,
+      "rule_id": "SEC003",
+      "description": "Safe parameterized SQLite query with named parameter"
+    },
+    {
+      "id": "DEC003",
+      "target": "bench/victim",
+      "path": "api/auth.py",
+      "line_start": 40,
+      "line_end": 43,
+      "rule_id": "SEC006",
+      "description": "Secure SHA-256 password hashing with salt"
+    },
+    {
+      "id": "DEC004",
+      "target": "bench/victim",
+      "path": "api/auth.py",
+      "line_start": 45,
+      "line_end": 48,
+      "rule_id": "SEC006",
+      "description": "Cryptographically secure random token generation with secrets"
+    },
+    {
+      "id": "DEC005",
+      "target": "bench/victim",
+      "path": "api/payments.py",
+      "line_start": 59,
+      "line_end": 62,
+      "rule_id": "SEC004",
+      "description": "Safe JSON deserialization using json.loads instead of pickle"
+    },
+    {
+      "id": "DEC006",
+      "target": "bench/victim",
+      "path": "api/payments.py",
+      "line_start": 64,
+      "line_end": 67,
+      "rule_id": "SEC005",
+      "description": "Remote POST with explicit verify=True certificate validation"
+    },
+    {
+      "id": "DEC007",
+      "target": "bench/victim",
+      "path": "api/orders.py",
+      "line_start": 154,
+      "line_end": 159,
+      "rule_id": "SEC008",
+      "description": "Admin metrics route protected by @require_auth decorator"
+    },
+    {
+      "id": "DEC008",
+      "target": "bench/victim",
+      "path": "api/orders.py",
+      "line_start": 162,
+      "line_end": 165,
+      "rule_id": "SEC009",
+      "description": "Webhook dispatched to hardcoded fixed domain (not user-controlled SSRF)"
+    },
+    {
+      "id": "DEC009",
+      "target": "bench/victim",
+      "path": "api/utils.py",
+      "line_start": 27,
+      "line_end": 30,
+      "rule_id": "SLP003",
+      "description": "Architectural comment explaining rationale rather than restating code"
+    },
+    {
+      "id": "DEC010",
+      "target": "bench/victim",
+      "path": "frontend/src/app.js",
+      "line_start": 15,
+      "line_end": 18,
+      "rule_id": "SEC002",
+      "description": "Safe JSON.parse state deserialization in frontend code"
+    },
+    {
+      "id": "DEC011",
+      "target": "bench/victim",
+      "path": "tests/test_api.py",
+      "line_start": 9,
+      "line_end": 14,
+      "rule_id": "GAP003",
+      "description": "Complete unit test with assertion logic"
+    },
+    {
+      "id": "DEC012",
+      "target": "bench/victim",
+      "path": ".github/workflows/deploy.yml",
+      "line_start": 12,
+      "line_end": 13,
+      "rule_id": "SEC013",
+      "description": "SHA-pinned GitHub Action checkout step"
+    },
+    {
+      "id": "DEC013",
+      "target": "bench/victim",
+      "path": "Dockerfile",
+      "line_start": 7,
+      "line_end": 7,
+      "rule_id": "SEC012",
+      "description": "Deterministic production npm ci command with clean arguments"
+    },
+    {
+      "id": "DEC014",
+      "target": "bench/victim",
+      "path": ".cursorrules",
+      "line_start": 10,
+      "line_end": 11,
+      "rule_id": "SEC014",
+      "description": "Standard coding formatting instruction in agent-facing file"
+    },
+    {
+      "id": "DEC015",
+      "target": "bench/victim",
+      "path": "api/config.py",
+      "line_start": 13,
+      "line_end": 15,
+      "rule_id": "SEC007",
+      "description": "Safe production database timeout setting"
+    },
+    {
+      "id": "DEC016",
+      "target": "bench/victim-go",
+      "path": "main.go",
+      "line_start": 68,
+      "line_end": 73,
+      "rule_id": "SEC006",
+      "description": "Cryptographically secure SHA-256 hash in Go"
+    },
+    {
+      "id": "DEC017",
+      "target": "bench/victim-go",
+      "path": "main.go",
+      "line_start": 75,
+      "line_end": 80,
+      "rule_id": "SLP001",
+      "description": "Proper error handling and logging in Go"
+    },
+    {
+      "id": "DEC018",
+      "target": "bench/victim-go",
+      "path": "main.go",
+      "line_start": 82,
+      "line_end": 84,
+      "rule_id": "SLP008",
+      "description": "Strongly-typed Go constant declarations"
+    },
+    {
+      "id": "DEC019",
+      "target": "bench/victim",
+      "path": "docs/guide.md",
+      "line_start": 9,
+      "line_end": 10,
+      "rule_id": "GAP007",
+      "description": "Valid relative markdown link resolving to existing file"
+    },
+    {
+      "id": "DEC020",
+      "target": "bench/victim",
+      "path": "requirements.txt",
+      "line_start": 17,
+      "line_end": 18,
+      "rule_id": "DEP006",
+      "description": "Strictly version-pinned dependency flask==3.0.0"
+    }
+  ],
+  "claims": [
+    {
+      "claim_type": "authentication",
+      "text": "The platform provides JWT authentication for user sessions and APIs.",
+      "expected_verdict": "UNSUPPORTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "encryption",
+      "text": "We enforce strict TLS verification on all external payment requests.",
+      "expected_verdict": "CONTRADICTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "encryption",
+      "text": "Includes AES-256 encryption for data at rest.",
+      "expected_verdict": "CONTRADICTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "caching",
+      "text": "Provides Redis caching for high throughput product catalog searches.",
+      "expected_verdict": "UNSUPPORTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "rate_limiting",
+      "text": "Employs rate limiting across public API endpoints.",
+      "expected_verdict": "UNSUPPORTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "docker",
+      "text": "Docker deployment support for containerized cloud deployment.",
+      "expected_verdict": "CONTRADICTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "ci",
+      "text": "Continuous Integration with GitHub Actions workflows.",
+      "expected_verdict": "CONTRADICTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "database",
+      "text": "Robust database connectivity and connection pool management.",
+      "expected_verdict": "VERIFIED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "tests",
+      "text": "Includes automated tests for core API endpoints.",
+      "expected_verdict": "PARTIAL",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "logging",
+      "text": "Implements structured logging for production observability.",
+      "expected_verdict": "VERIFIED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "input_validation",
+      "text": "Performs strict input validation on all user request parameters.",
+      "expected_verdict": "CONTRADICTED",
+      "target": "bench/victim"
+    },
+    {
+      "claim_type": "offline",
+      "text": "Offers full offline mode operations without network connectivity.",
+      "expected_verdict": "UNSUPPORTED",
+      "target": "bench/victim"
+    }
+  ]
+}

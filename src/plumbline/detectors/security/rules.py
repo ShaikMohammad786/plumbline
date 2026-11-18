@@ -299,7 +299,7 @@ def detect_sec002(context: ScanContext) -> list[Finding]:
 
 # SEC003: SQL injection via concatenation or formatting
 SQL_CONCAT_RE = re.compile(
-    r"""(?:execute|raw|query)\s*\(\s*(?:f['"]|['"].*?\s+(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\s+.*?\s*['"]\s*\+|\w+\.format\()""",
+    r"""(?:execute|raw|query)\s*\(\s*(?:f['"]|['"].*?\s+(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\s+.*?\s*['"]\s*\+|\w+\.format\()|f['"].*?\b(SELECT|INSERT|UPDATE|DELETE)\b.*?\{|['"].*?\b(SELECT|INSERT|UPDATE|DELETE)\b.*?['"]\s*%\s*""",
     re.IGNORECASE,
 )
 
@@ -414,7 +414,7 @@ def detect_sec005(context: ScanContext) -> list[Finding]:
 
 # SEC006: Weak hash / random
 WEAK_CRYPTO_RE = re.compile(
-    r"""(?:\bhashlib\.md5\(|\bhashlib\.sha1\(|\brandom\.random\(|\brandom\.randint\(|\bMODE_ECB\b|crypto\.createCipheriv\(['"]aes-128-ecb['"])"""
+    r"""(?:\bhashlib\.md5\(|\bhashlib\.sha1\(|\brandom\.random\(|\brandom\.randint\(|\bMODE_ECB\b|crypto\.createCipheriv\(['"]aes-128-ecb['"]|\bmd5\.New\(|\bsha1\.New\()"""
 )
 
 

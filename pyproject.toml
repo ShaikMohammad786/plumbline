@@ -42,7 +42,7 @@ packages = ["src/plumbline"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["tests/golden"]
+extend-exclude = ["tests/golden", "bench/victim", "bench/victim-go"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B"]
@@ -50,11 +50,12 @@ ignore = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.11"
+mypy_path = "src"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-exclude = ["^tests/golden/"]
+exclude = ["^tests/golden/", "^bench/victim/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

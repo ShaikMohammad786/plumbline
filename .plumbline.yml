@@ -3,3 +3,4 @@ version: 1
 scan:
   exclude:
     - "tests/golden/**"
+    - "bench/**"

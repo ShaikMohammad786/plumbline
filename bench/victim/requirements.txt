@@ -1,0 +1,18 @@
+# Vibe-Shop Python Dependencies
+
+# Planted: DEP001 hallucinated dependency
+fastapi-jwt-auth-pro==0.1.0
+
+# Planted: DEP002 typosquat dependency
+reqeusts==2.31.0
+
+# Planted: DEP005 declared but unused dependency
+celery==5.3.6
+
+# Planted: DEP006 unpinned dependency
+urllib3
+
+
+# --- DECOY ---
+# Decoy: Strictly pinned safe framework dependency (DEC020)
+flask==3.0.0

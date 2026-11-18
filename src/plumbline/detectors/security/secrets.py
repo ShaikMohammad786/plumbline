@@ -11,8 +11,11 @@ KNOWN_SECRET_PATTERNS = [
     (re.compile(r"\b(AKIA[0-9A-Z]{16})\b"), "AWS Access Key ID"),
     # GitHub Token
     (re.compile(r"\b(gh[pousr]_[A-Za-z0-9_]{36,255})\b"), "GitHub Token"),
-    # Stripe Secret Key (live or test mode)
-    (re.compile(r"\b(sk_(?:live|test)_[0-9a-zA-Z]{24,})\b"), "Stripe Secret Key"),
+    # Stripe / OpenAI Secret Key (live or test mode, or standard sk- prefix)
+    (
+        re.compile(r"\b(sk[-_](?:live|test)[-_][0-9a-zA-Z]{24,}|sk-[0-9a-zA-Z]{32,})\b"),
+        "API Secret Key",
+    ),
     # Slack Token
     (re.compile(r"\b(xox[baprs]-[0-9a-zA-Z]{10,48})\b"), "Slack Token"),
     # Private Key Header

@@ -48,7 +48,7 @@ authorization:
 
 encryption:
   triggers:
-    - '\b(encrypt(s|ed|ion)? at rest|aes[-_]256|end-to-end encrypt(ed|ion)|cryptographic cipher)\b'
+    - '\b(encrypt(s|ed|ion)? at rest|aes[-_]256|end-to-end encrypt(ed|ion)|cryptographic cipher|tls verification|ssl/tls)\b'
   positive:
     imports:
       - 'cryptography'
@@ -61,6 +61,7 @@ encryption:
       - 'AES'
   counter_evidence:
     rules:
+      - 'SEC005'
       - 'SEC006'
 
 password_hashing:
@@ -227,7 +228,7 @@ ci:
 
 docker:
   triggers:
-    - '\b(docker container(ized)?|docker-compose|containerized deployment|production dockerfile)\b'
+    - '\b(docker|docker-compose|containerized)\b'
   positive:
     files:
       - 'Dockerfile'
@@ -239,7 +240,7 @@ docker:
 
 database:
   triggers:
-    - '\b(postgresql|postgres|mysql|sqlite|mongodb|prisma|sqlalchemy|orm|database migrations?)\b'
+    - '\b(database|postgresql|postgres|mysql|sqlite|mongodb|prisma|sqlalchemy|orm)\b'
   positive:
     imports:
       - 'sqlalchemy'
@@ -283,7 +284,7 @@ real_time:
 
 offline:
   triggers:
-    - '\b(offline-first|works? offline|offline by default|no internet required|offline cache)\b'
+    - '\b(offline-first|works? offline|offline by default|no internet required|offline cache|offline mode)\b'
   positive:
     calls:
       - 'cache'
