@@ -127,12 +127,44 @@ def extract_file_facts(path: str, language: Optional[str], content: str) -> UCMF
                     )
                 )
 
+            # Check imports
+            if "import.from_module" in match_dict:
+                from_node = match_dict["import.from_module"][0]
+                mod_text = (
+                    content.encode("utf-8")[from_node.start_byte : from_node.end_byte]
+                    .decode("utf-8", errors="replace")
+                    .strip("'\"")
+                )
+                start_l = from_node.start_point[0] + 1
+                sym_name: Optional[str] = None
+                if "import.name" in match_dict:
+                    name_node = match_dict["import.name"][0]
+                    sym_name = (
+                        content.encode("utf-8")[name_node.start_byte : name_node.end_byte]
+                        .decode("utf-8", errors="replace")
+                        .strip("'\"")
+                    )
+                facts.imports.append(Import(module=mod_text, name=sym_name, line=start_l))
+            elif "import.module" in match_dict:
+                for mod_node in match_dict["import.module"]:
+                    mod_text = (
+                        content.encode("utf-8")[mod_node.start_byte : mod_node.end_byte]
+                        .decode("utf-8", errors="replace")
+                        .strip("'\"")
+                    )
+                    start_l = mod_node.start_point[0] + 1
+                    facts.imports.append(Import(module=mod_text, line=start_l))
+
             for cap_name, nodes in match_dict.items():
                 if cap_name in (
                     "symbol.function.name",
                     "symbol.function.def",
                     "symbol.class.name",
                     "symbol.class.def",
+                    "import.module",
+                    "import.name",
+                    "import.from_module",
+                    "import.def",
                 ):
                     continue
                 for node in nodes:
@@ -141,10 +173,7 @@ def extract_file_facts(path: str, language: Optional[str], content: str) -> UCMF
                         "utf-8", errors="replace"
                     )
 
-                    if cap_name in ("import.module", "import.name", "import.from_module"):
-                        cleaned = node_text.strip("'\"")
-                        facts.imports.append(Import(module=cleaned, line=start_line))
-                    elif cap_name == "comment.text":
+                    if cap_name == "comment.text":
                         facts.comments.append(
                             Comment(text=node_text.lstrip("#/ *-").strip(), line=start_line)
                         )
@@ -162,7 +191,9 @@ def extract_file_facts(path: str, language: Optional[str], content: str) -> UCMF
         if "except" in content_lower or "catch" in content_lower or "err" in content_lower:
             _extract_handlers(lines, language, facts)
 
-        if "get" in content_lower or "post" in content_lower or "route" in content_lower:
+        if any(
+            w in content_lower for w in ("get", "post", "put", "delete", "patch", "route", "router")
+        ):
             _extract_routes(lines, language, facts)
 
         if "env" in content_lower:

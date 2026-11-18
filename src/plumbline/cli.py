@@ -23,6 +23,7 @@ from plumbline.ingest.manifests import Dependency, parse_manifest
 from plumbline.ingest.walker import walk_repository
 from plumbline.models import FindingSeverity, Report, ScanStats
 from plumbline.report.json_out import render_json_report
+from plumbline.report.sarif import render_sarif_report
 from plumbline.report.terminal import render_terminal_report
 
 app = typer.Typer(
@@ -173,6 +174,14 @@ def scan(
         json_output = render_json_report(report, out_file)
         if not out_file and ("json" in format and len(format) == 1):
             console.print(json_output)
+
+    if "sarif" in format:
+        out_file = (
+            out / "report.sarif" if len(format) > 1 or out != Path(".plumbline/out") else None
+        )
+        sarif_output = render_sarif_report(report, out_file)
+        if not out_file and ("sarif" in format and len(format) == 1):
+            console.print(sarif_output)
 
     if "terminal" in format and not quiet:
         render_terminal_report(report, console)

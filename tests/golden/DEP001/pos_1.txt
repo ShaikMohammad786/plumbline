@@ -1,0 +1,1 @@
+fake-ai-pkg-nonexistent==1.0.0

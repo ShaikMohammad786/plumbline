@@ -1,4 +1,4 @@
-"""Golden test harness validating all 19 GAP and SLP detector rules."""
+"""Golden test harness validating all detector rules."""
 
 from pathlib import Path
 
@@ -11,6 +11,7 @@ from plumbline.fusion.baseline import apply_baseline, save_baseline
 from plumbline.fusion.dedupe import deduplicate_findings
 from plumbline.fusion.score import compute_repo_truth_score
 from plumbline.fusion.suppress import apply_suppressions
+from plumbline.ingest.manifests import Dependency, _parse_package_json, _parse_requirements_txt
 from plumbline.ingest.walker import walk_repository
 from plumbline.models import (
     Evidence,
@@ -35,8 +36,8 @@ def test_golden_gap_and_slp_rules() -> None:
             continue
 
         rule_id = rule_dir.name
-        # Skip rules that are repo-wide metadata checks (e.g. GAP008) in isolated file tests
-        if rule_id in ("GAP008", "GAP004"):
+        # Skip rules that are repo-wide metadata checks in isolated file tests
+        if rule_id in ("GAP008", "GAP004", "SEC011"):
             continue
 
         pos_files = list(rule_dir.glob("pos_*.*"))
@@ -47,10 +48,34 @@ def test_golden_gap_and_slp_rules() -> None:
             walk_res = walk_repository(pos_file.parent, cfg)
             target_entry = [f for f in walk_res.files if f.full_path.name == pos_file.name]
             assert target_entry, f"Could not find {pos_file.name}"
-            # Force prod file class for rule testing (except test-specific rules like GAP003)
             target_entry[0].file_class = FileClass.TEST if rule_id == "GAP003" else FileClass.PROD
 
-            ctx = ScanContext(pos_file.parent, target_entry, [], cfg)
+            deps: list[Dependency] = []
+            if rule_id == "DEP004":
+                deps = [
+                    Dependency(
+                        name="fastapi",
+                        spec="1.0.0",
+                        ecosystem="pypi",
+                        manifest_path="requirements.txt",
+                        line=1,
+                    ),
+                    Dependency(
+                        name="express",
+                        spec="4.19.0",
+                        ecosystem="npm",
+                        manifest_path="package.json",
+                        line=1,
+                    ),
+                ]
+            elif rule_id.startswith("DEP"):
+                content = pos_file.read_text(encoding="utf-8")
+                if pos_file.suffix == ".txt":
+                    deps = _parse_requirements_txt(content, pos_file.name)
+                elif pos_file.suffix == ".json":
+                    deps = _parse_package_json(content, pos_file.name)
+
+            ctx = ScanContext(pos_file.parent, target_entry, deps, cfg)
             detector = registry._detectors.get(rule_id)
             if detector:
                 findings = detector(ctx)
@@ -69,7 +94,15 @@ def test_golden_gap_and_slp_rules() -> None:
             assert target_entry, f"Could not find {neg_file.name}"
             target_entry[0].file_class = FileClass.TEST if rule_id == "GAP003" else FileClass.PROD
 
-            ctx = ScanContext(neg_file.parent, target_entry, [], cfg)
+            neg_deps: list[Dependency] = []
+            if rule_id.startswith("DEP"):
+                content = neg_file.read_text(encoding="utf-8")
+                if neg_file.suffix == ".txt":
+                    neg_deps = _parse_requirements_txt(content, neg_file.name)
+                elif neg_file.suffix == ".json":
+                    neg_deps = _parse_package_json(content, neg_file.name)
+
+            ctx = ScanContext(neg_file.parent, target_entry, neg_deps, cfg)
             detector = registry._detectors.get(rule_id)
             if detector:
                 findings = detector(ctx)

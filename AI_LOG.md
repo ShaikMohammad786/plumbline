@@ -77,3 +77,33 @@ This log provides a truthful, complete audit trail of all AI interactions, model
   - Baseline lifecycle verified: `plumb baseline create` and baseline re-scan cleanly verified.
 - **Open issues**:
   - Security (SEC001-SEC015) and Supply Chain (DEP001-DEP007) rules to be implemented in Phase 3.
+
+---
+
+## 2026-11-18 15:15 IST, Phase 3: Security & Supply Chain Detectors, Registries & SARIF 2.1.0
+- **Tool and model**: Antigravity, Gemini 3.8 Flash (High)
+- **Prompt summary**: Implemented Rule 3 secret masking, 15 security detectors (SEC001-SEC015), 7 supply chain detectors (DEP001-DEP007), 24h disk-cached registry clients (PyPI, npm, crates.io, gomod, rubygems) with offline-by-default safety, bundled popular package catalogs for typosquatting detection, SARIF 2.1.0 exporter, golden test fixtures for 22 new rules, and self-scan dogfooding.
+- **What the AI produced**:
+  - `src/plumbline/detectors/security/`: `secrets.py` (Shannon entropy, secret masking guarantees), `rules.py` (SEC001 to SEC015).
+  - `src/plumbline/detectors/supply/`: `rules.py` (DEP001 to DEP007, Levenshtein distance, stdlib exclusions, PyPI canonical module mappings).
+  - `src/plumbline/registries/`: `cache.py` (24-hour disk cache in `.plumbline/cache/registries/`), `popular/` bundled catalogs (`pypi.txt`, `npm.txt`, `crates.txt`, `gomod.txt`, `rubygems.txt`), and clients `pypi.py`, `npm.py`, `crates.py`, `gomod.py`, `rubygems.py`.
+  - `src/plumbline/report/sarif.py`: SARIF 2.1.0 standard-compliant exporter with rule definitions, locations, and stable SHA-256 fingerprints.
+  - Golden test fixtures: 22 new fixture folders under `tests/golden/SEC001`-`SEC015` and `DEP001`-`DEP007`.
+  - Unit test suites: `tests/unit/test_security.py`, `test_supply.py`, `test_registries.py`, `test_sarif.py`.
+  - Generated documentation: Updated `docs/RULES.md` to catalog all 41 active rules.
+- **What I changed or rejected, and why**:
+  - Replaced legacy mock/stub pattern in tree-sitter Python import query: extracted `import.from_module` as module name and `import.name` as imported symbol, preventing imported classes/functions from being mistakenly classified as missing external modules.
+  - Added `PYPI_CANONICAL_MODULE_MAP` (`pyyaml` -> `yaml`, `pillow` -> `PIL`, `scikit-learn` -> `sklearn`, `python-dateutil` -> `dateutil`) to resolve standard discrepancies between package distribution names and runtime import stems.
+  - Refined `detect_sec008` (route auth guard check): removed overly generic keyword `"user"` from `AUTH_KEYWORDS` (which false-positived on standard endpoints like `list_users` or `/api/users`), keeping specific security tokens like `current_user`, `authenticated`, `roles`, `jwt`, `permission`.
+  - Refined `detect_sec010` (CSRF check): expanded route HTTP methods beyond POST to PUT, DELETE, PATCH, and updated UCM fast-filter in `builder.py` to trigger on `delete`, `put`, `patch`.
+  - Refined `detect_sec009` (SSRF check): expanded allowed sanitization keywords to include `allowed`, `validate`, `safe`, `clean`, `sanitize`.
+  - Refined `detect_sec014` and `detect_sec015`: adjusted agent file matching to identify markdown documents and MCP configs regardless of directory isolation during unit tests.
+  - Enforced Rule 3: strictly masked all credentials (`sk_live_...`, `AKIA...`) to first 4 chars + asterisks across all evidence snippets and test assertions.
+- **How it was verified**:
+  - 44 of 44 unit and golden tests passing across all 41 rule directories.
+  - Code coverage achieved 87% across `src/plumbline` (exceeding the 80% requirement).
+  - Strict type checking (`mypy src tests`) and linting (`ruff check .`, `ruff format --check .`) passed with 0 errors.
+  - Self-scan dogfooding: `plumb scan .` completed in 0.33s with 0 Critical, 0 High, 0 Medium findings, Repo Truth Score 89/100 (Grade B), and exit code 0.
+  - SARIF 2.1.0 output verified via `plumb scan . --format sarif --out .plumbline/out`.
+- **Open issues**:
+  - Phase 4: Claim Ledger extraction, taxonomy verification (`CLM001`-`CLM004`), and HTML single-file report.
